@@ -40,6 +40,8 @@ pub static PERMS: &[Perm] = &[
     Perm { key: "env.read",           category: "workloads",       label: "View env",               mutating: false },
     Perm { key: "nodes.read",         category: "infrastructure",  label: "View nodes",             mutating: false },
     Perm { key: "rightsizing.read",   category: "infrastructure",  label: "View right-sizing",      mutating: false },
+    Perm { key: "capacity.read",      category: "infrastructure",  label: "View capacity",          mutating: false },
+    Perm { key: "quotas.read",        category: "infrastructure",  label: "View quotas",            mutating: false },
     Perm { key: "events.read",        category: "infrastructure",  label: "View events",            mutating: false },
     Perm { key: "audit.read",         category: "administration",  label: "View audit log",         mutating: false },
     Perm { key: "builds.read",        category: "ci_cd",           label: "View builds",            mutating: false },
@@ -127,6 +129,10 @@ pub fn resolve(method: &Method, path: &str) -> Option<&'static str> {
 
         // ── right-sizing (read-only advisory) ────────────────────────────────
         ["api", "rightsizing", ..] => Some("rightsizing.read"),
+
+        // ── capacity & quotas (read-only) ────────────────────────────────────
+        ["api", "capacity", ..] => Some("capacity.read"),
+        ["api", "quotas", ..] => Some("quotas.read"),
 
         // ── audit ──────────────────────────────────────────────────────────
         ["api", "audit", ..] => Some("audit.read"),

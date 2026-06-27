@@ -515,6 +515,114 @@ export interface RightsizingRow {
 }
 
 /* ------------------------------------------------------------------ */
+/* Cluster capacity & namespace quotas (read-only)                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Per-node capacity row, served as part of `GET /api/capacity`. Schedulable
+ * `allocatable` next to the sum of pod container requests scheduled on the node,
+ * plus live usage from metrics-server.
+ *
+ * All CPU figures are millicores; all memory figures are MiB. `usedCpuM`/
+ * `usedMemMi` are `null` (and `metricsAvailable=false`) when this node has no
+ * metrics-server sample.
+ */
+export interface CapacityNode {
+  name: string;
+  /** Schedulable CPU from `status.allocatable.cpu` (millicores). */
+  allocatableCpuM: number;
+  /** Schedulable memory from `status.allocatable.memory` (MiB). */
+  allocatableMemMi: number;
+  /** Sum of pod container CPU requests scheduled on this node (millicores). */
+  requestedCpuM: number;
+  /** Sum of pod container memory requests scheduled on this node (MiB). */
+  requestedMemMi: number;
+  /** Live CPU usage from metrics-server (millicores); null when unavailable. */
+  usedCpuM: number | null;
+  /** Live memory usage from metrics-server (MiB); null when unavailable. */
+  usedMemMi: number | null;
+  /** True when a metrics-server sample was found for this node. */
+  metricsAvailable: boolean;
+}
+
+/**
+ * Cluster-wide rollup summing every node, with schedulable headroom
+ * (allocatable − requested). `usedCpuM`/`usedMemMi` are `null` when no node had
+ * a metrics sample; `metricsAvailable` is true when at least one node reported.
+ */
+export interface CapacityCluster {
+  allocatableCpuM: number;
+  allocatableMemMi: number;
+  requestedCpuM: number;
+  requestedMemMi: number;
+  usedCpuM: number | null;
+  usedMemMi: number | null;
+  /** Schedulable headroom: allocatable − requested (millicores). */
+  headroomCpuM: number;
+  /** Schedulable headroom: allocatable − requested (MiB). */
+  headroomMemMi: number;
+  metricsAvailable: boolean;
+}
+
+/** Response of `GET /api/capacity`. */
+export interface CapacityResponse {
+  nodes: CapacityNode[];
+  cluster: CapacityCluster;
+}
+
+/**
+ * One `(resource, used, hard)` triple off a ResourceQuota's status/spec. `used`
+ * and `hard` are raw k8s quantity strings (e.g. "4", "8Gi"), parse with
+ * cpuToCores / memToBytes / a plain number as appropriate.
+ */
+export interface QuotaResource {
+  resource: string;
+  used: string;
+  hard: string;
+}
+
+/** One ResourceQuota in a namespace, with its per-resource used/hard rows. */
+export interface QuotaInfo {
+  namespace: Namespace;
+  name: string;
+  hard: QuotaResource[];
+}
+
+/**
+ * One per-resource line of a LimitRange limit: the default request/limit a
+ * container inherits, plus min/max bounds. All bounds are raw k8s quantity
+ * strings; absent bounds are `null`.
+ */
+export interface LimitRangeItem {
+  /** "Container" | "Pod" | "PersistentVolumeClaim". */
+  type: string;
+  /** Resource the bounds apply to (e.g. "cpu", "memory", "storage"). */
+  resource: string;
+  /** Default limit applied to a container that omits one. */
+  default: string | null;
+  /** Default request applied to a container that omits one. */
+  defaultRequest: string | null;
+  max: string | null;
+  min: string | null;
+}
+
+/** One LimitRange in a namespace, flattened to per-(type, resource) rows. */
+export interface LimitRangeInfo {
+  name: string;
+  limits: LimitRangeItem[];
+}
+
+/**
+ * One namespace's quota/limit picture, served by `GET /api/quotas?ns=`. A
+ * namespace with no ResourceQuota / LimitRange has empty vectors.
+ */
+export interface NamespaceQuota {
+  namespace: Namespace;
+  quotas: QuotaInfo[];
+  limitRanges: LimitRangeInfo[];
+}
+
+/* ------------------------------------------------------------------ */
 /* Audit                                                               */
 /* ------------------------------------------------------------------ */
 

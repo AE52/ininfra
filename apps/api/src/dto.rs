@@ -479,6 +479,122 @@ pub struct RightsizingRow {
 }
 
 /* ------------------------------------------------------------------ */
+/* Cluster capacity & namespace quotas (read-only)                     */
+/* ------------------------------------------------------------------ */
+
+/// Per-node capacity rollup row: schedulable allocatable vs the sum of pod
+/// container requests scheduled on the node, plus live usage from
+/// metrics-server. All CPU figures are millicores; all memory figures are MiB.
+///
+/// `usedCpuM`/`usedMemMi` are `None` (and `metricsAvailable=false`) when this
+/// node has no metrics-server sample, so the view degrades to a
+/// requests-vs-allocatable picture.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CapacityNode {
+    pub name: String,
+    /// Schedulable CPU from `status.allocatable.cpu` (millicores).
+    pub allocatable_cpu_m: i64,
+    /// Schedulable memory from `status.allocatable.memory` (MiB).
+    pub allocatable_mem_mi: i64,
+    /// Sum of pod container CPU requests scheduled on this node (millicores).
+    pub requested_cpu_m: i64,
+    /// Sum of pod container memory requests scheduled on this node (MiB).
+    pub requested_mem_mi: i64,
+    /// Live CPU usage from metrics-server (millicores); `None` when unavailable.
+    pub used_cpu_m: Option<i64>,
+    /// Live memory usage from metrics-server (MiB); `None` when unavailable.
+    pub used_mem_mi: Option<i64>,
+    /// True when a metrics-server sample was found for this node.
+    pub metrics_available: bool,
+}
+
+/// Cluster-wide rollup summing every node's allocatable/requested/used, plus
+/// schedulable headroom (allocatable − requested). `usedCpuM`/`usedMemMi` are
+/// `None` when no node had a metrics sample; `metricsAvailable` is true when at
+/// least one node reported usage.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CapacityCluster {
+    pub allocatable_cpu_m: i64,
+    pub allocatable_mem_mi: i64,
+    pub requested_cpu_m: i64,
+    pub requested_mem_mi: i64,
+    pub used_cpu_m: Option<i64>,
+    pub used_mem_mi: Option<i64>,
+    /// Schedulable headroom: allocatable − requested (millicores).
+    pub headroom_cpu_m: i64,
+    /// Schedulable headroom: allocatable − requested (MiB).
+    pub headroom_mem_mi: i64,
+    pub metrics_available: bool,
+}
+
+/// Response of `GET /api/capacity` — the per-node rows and the cluster rollup.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CapacityResponse {
+    pub nodes: Vec<CapacityNode>,
+    pub cluster: CapacityCluster,
+}
+
+/// One `(resource, used, hard)` triple off a ResourceQuota's status. `used` and
+/// `hard` are the raw k8s quantity strings (e.g. "4", "8Gi", "10") so the UI can
+/// render them and compute ratios with the existing quantity parsers.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QuotaResource {
+    pub resource: String,
+    pub used: String,
+    pub hard: String,
+}
+
+/// One ResourceQuota in a namespace, with its per-resource used/hard rows.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QuotaInfo {
+    pub namespace: String,
+    pub name: String,
+    pub hard: Vec<QuotaResource>,
+}
+
+/// One per-resource line of a LimitRange limit (e.g. the default request/limit a
+/// container inherits, or the min/max bounds). All bounds are raw k8s quantity
+/// strings; absent bounds are `None`.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LimitRangeItem {
+    /// LimitRange item type: "Container" | "Pod" | "PersistentVolumeClaim".
+    #[serde(rename = "type")]
+    pub type_: String,
+    /// Resource the bounds apply to (e.g. "cpu", "memory", "storage").
+    pub resource: String,
+    /// Default limit applied to a container that omits one.
+    pub default: Option<String>,
+    /// Default request applied to a container that omits one.
+    pub default_request: Option<String>,
+    pub max: Option<String>,
+    pub min: Option<String>,
+}
+
+/// One LimitRange in a namespace, flattened to per-(type, resource) rows.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LimitRangeInfo {
+    pub name: String,
+    pub limits: Vec<LimitRangeItem>,
+}
+
+/// One namespace's quota/limit picture, served by `GET /api/quotas`. A namespace
+/// with no ResourceQuota / LimitRange simply has empty vectors.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NamespaceQuota {
+    pub namespace: String,
+    pub quotas: Vec<QuotaInfo>,
+    pub limit_ranges: Vec<LimitRangeInfo>,
+}
+
+/* ------------------------------------------------------------------ */
 /* Audit                                                               */
 /* ------------------------------------------------------------------ */
 
