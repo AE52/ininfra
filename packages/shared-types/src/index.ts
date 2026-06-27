@@ -257,6 +257,23 @@ export interface PodSummary {
   usageMemory: string | null;
 }
 
+/**
+ * Read-only raw manifest of a live cluster object, served by
+ * `GET /api/manifest/:kind/:ns/:name`. The server fetches the typed object,
+ * strips `metadata.managedFields` and the kubectl last-applied-configuration
+ * annotation, and renders it to a YAML string. `status` is kept (useful for
+ * inspecting a live object). Supported kinds: deployment, statefulset, pod,
+ * service, configmap.
+ */
+export interface ManifestResponse {
+  /** The sanitized object rendered as YAML. */
+  yaml: string;
+  /** Lowercased kind that was fetched, e.g. "deployment". */
+  kind: string;
+  name: string;
+  namespace: string;
+}
+
 /** A single streamed/queried log line for a pod container. */
 export interface PodLog {
   pod: string;
