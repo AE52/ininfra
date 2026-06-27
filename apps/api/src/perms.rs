@@ -178,6 +178,9 @@ pub fn resolve(method: &Method, path: &str) -> Option<&'static str> {
         // ── manifest (read-only raw YAML) ───────────────────────────────────
         ["api", "manifest", ..] => Some("services.read"),
 
+        // ── describe (read-only events + status summary) ────────────────────
+        ["api", "describe", ..] => Some("services.read"),
+
         // ── RBAC ───────────────────────────────────────────────────────────
         ["api", "rbac", ..] => Some("rbac.manage"),
 

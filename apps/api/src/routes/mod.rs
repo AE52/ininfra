@@ -27,6 +27,7 @@
 //!   GET    /api/nodes
 //!   GET    /api/audit?cursor=&limit=
 //!   GET    /api/manifest/:kind/:ns/:name        (read-only raw YAML)
+//!   GET    /api/describe/:kind/:ns/:name        (read-only events + status summary)
 
 use axum::{routing::get, Router};
 
@@ -38,6 +39,7 @@ mod build_config;
 mod builds;
 mod deploy;
 mod deployments;
+mod describe;
 mod errors;
 mod favorites;
 mod gateway;
@@ -91,6 +93,7 @@ pub fn router(state: AppState) -> Router {
         .merge(search::routes())
         .merge(gateway::routes())
         .merge(manifest::routes())
+        .merge(describe::routes())
         .route("/api/auth/me", get(auth::me))
         // Layer order (outermost → innermost on request, innermost → outermost on response):
         //   require_auth (outermost) → capture_errors → enforce_permissions (innermost)

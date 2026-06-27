@@ -934,6 +934,52 @@ pub struct EventInfo {
 }
 
 /* ------------------------------------------------------------------ */
+/* Describe (per-object events + status summary)                       */
+/* ------------------------------------------------------------------ */
+
+/// One status condition off a live object (`status.conditions[*]`).
+/// Shared shape across deployment / statefulset / pod conditions.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DescribeCondition {
+    #[serde(rename = "type")]
+    pub type_: String,
+    pub status: String,
+    pub reason: Option<String>,
+    pub message: Option<String>,
+    pub last_transition: Option<Timestamp>,
+}
+
+/// Per-container status (pods only) distilled from `status.containerStatuses[*]`.
+/// `state` is a short verb ("running" / "waiting" / "terminated"); `reason`
+/// carries the meaningful detail (e.g. "CrashLoopBackOff", "OOMKilled").
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DescribeContainer {
+    pub name: String,
+    pub ready: bool,
+    pub restart_count: i32,
+    /// "running" | "waiting" | "terminated" | "unknown".
+    pub state: String,
+    pub reason: Option<String>,
+    pub message: Option<String>,
+}
+
+/// Read-only "describe"-style summary for one object plus its recent events.
+/// Served by `GET /api/describe/:kind/:ns/:name`.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DescribeResponse {
+    pub kind: String,
+    pub namespace: String,
+    pub name: String,
+    pub conditions: Vec<DescribeCondition>,
+    /// Populated for pods only; empty for deployments / statefulsets.
+    pub containers: Vec<DescribeContainer>,
+    pub events: Vec<EventInfo>,
+}
+
+/* ------------------------------------------------------------------ */
 /* PersistentVolumeClaims                                              */
 /* ------------------------------------------------------------------ */
 

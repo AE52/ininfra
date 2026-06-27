@@ -23,6 +23,7 @@ import type {
   CordonRequest,
   DeployInfo,
   Deployment,
+  DescribeResponse,
   EcrImage,
   EnvBundle,
   EnvPatch,
@@ -71,6 +72,9 @@ export type ManifestKind =
   | "pod"
   | "service"
   | "configmap";
+
+/** Kinds the read-only describe panel (`GET /api/describe/...`) supports. */
+export type DescribeKind = "deployment" | "statefulset" | "pod";
 
 export class ApiClientError extends Error {
   constructor(
@@ -257,6 +261,19 @@ export function createApiClient(options: ApiClientOptions = {}) {
         cfg,
         "GET",
         `/api/manifest/${kind}/${ns}/${name}`,
+      ),
+
+    /* ---- describe (read-only events + status summary) ---- */
+    /**
+     * Per-object "describe" panel: the object's `status.conditions`, (pods only)
+     * per-container status, and its recent k8s events (from the persisted event
+     * store, newest first). Supported `kind`: "deployment" | "statefulset" | "pod".
+     */
+    describe: (kind: DescribeKind, ns: Namespace, name: string) =>
+      request<DescribeResponse>(
+        cfg,
+        "GET",
+        `/api/describe/${kind}/${ns}/${name}`,
       ),
 
     /* ---- logs ---- */
