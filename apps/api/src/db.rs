@@ -28,6 +28,13 @@ fn parse_keyset(
     }
 }
 
+/// True when a sqlx error is Postgres reporting an invalid regular expression
+/// (SQLSTATE `2201B`, `invalid_regular_expression`). Used to turn a malformed
+/// user-supplied `~*` pattern into a 400 rather than a 500.
+fn is_invalid_regex_error(e: &sqlx::Error) -> bool {
+    matches!(e, sqlx::Error::Database(db) if db.code().as_deref() == Some("2201B"))
+}
+
 /// Delete log rows older than the configured retention. `audit_days`/`log_days`
 /// of 0 mean "keep forever". Returns the number of rows pruned.
 pub async fn prune_logs(pool: &PgPool, audit_days: i64, log_days: i64) -> ApiResult<u64> {
@@ -1120,7 +1127,21 @@ pub async fn list_audit(
     qb.push(" ORDER BY a.ts DESC, a.id DESC LIMIT ")
         .push_bind(limit + 1);
 
-    let rows: Vec<AuditRow> = qb.build_query_as::<AuditRow>().fetch_all(pool).await?;
+    let rows: Vec<AuditRow> = qb
+        .build_query_as::<AuditRow>()
+        .fetch_all(pool)
+        .await
+        .map_err(|e| {
+            // A pattern that passes the Rust `regex` crate can still be invalid
+            // POSIX ERE, which makes Postgres `~*` raise SQLSTATE 2201B
+            // (invalid_regular_expression). Surface that as a 400 (client error)
+            // instead of a 500 — only meaningful in regex mode.
+            if f.regex && is_invalid_regex_error(&e) {
+                ApiError::BadRequest("invalid search pattern".into())
+            } else {
+                ApiError::from(e)
+            }
+        })?;
 
     let mut entries: Vec<AuditEntry> = rows.into_iter().map(AuditEntry::from).collect();
     let next_cursor = if entries.len() as i64 > limit {

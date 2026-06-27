@@ -44,12 +44,24 @@ struct RevealQuery {
 }
 
 async fn get_env(
+    identity: Identity,
     State(st): State<AppState>,
     Path((ns, workload)): Path<(String, String)>,
     Query(q): Query<RevealQuery>,
 ) -> ApiResult<Json<EnvBundle>> {
     require_namespace(&ns)?;
-    let reveal = matches!(q.reveal.as_deref(), Some("1") | Some("true"));
+    let requested_reveal = matches!(q.reveal.as_deref(), Some("1") | Some("true"));
+
+    // Revealing decoded Secret values is admin-class only. A non-admin asking
+    // for reveal=1 is rejected outright (rather than silently masked) so the
+    // restriction is explicit; the masked view stays available to everyone.
+    let is_admin = identity.role == "admin" || identity.role == "super_admin";
+    if requested_reveal && !is_admin {
+        return Err(ApiError::Forbidden(
+            "revealing secret values requires the admin or super_admin role".into(),
+        ));
+    }
+    let reveal = requested_reveal && is_admin;
 
     let deploys: Api<K8sDeployment> = Api::namespaced(st.kube.clone(), &ns);
     let d = deploys
@@ -76,6 +88,27 @@ async fn get_env(
     }
 
     let inline = inline_env(&d);
+
+    // Audit the privileged reveal (decoded secret values left the server). The
+    // entry records WHICH secrets were revealed, never their values.
+    if reveal {
+        let revealed: Vec<String> = secrets.iter().map(|s| s.name.clone()).collect();
+        insert_audit(
+            &st.db,
+            NewAudit {
+                actor: &identity.username,
+                action: AuditAction::RevealSecret,
+                target_ns: Some(&ns),
+                target_kind: Some("Secret"),
+                target_name: Some(&workload),
+                detail: serde_json::json!({
+                    "workload": workload,
+                    "secrets": revealed,
+                }),
+            },
+        )
+        .await?;
+    }
 
     Ok(Json(EnvBundle {
         namespace: ns,

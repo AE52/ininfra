@@ -89,6 +89,7 @@ pub enum AuditAction {
     EditGateway,
     EditRbac,
     CordonNode,
+    RevealSecret,
 }
 
 impl AuditAction {
@@ -114,6 +115,7 @@ impl AuditAction {
             AuditAction::EditGateway => "edit_gateway",
             AuditAction::EditRbac => "edit_rbac",
             AuditAction::CordonNode => "cordon_node",
+            AuditAction::RevealSecret => "reveal_secret",
         }
     }
 }

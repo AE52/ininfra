@@ -138,10 +138,15 @@ pub async fn query_range(
     let range = range.unwrap_or_else(TimeRange::last_hour);
     let limit = limit.unwrap_or(500).min(5000);
 
-    // Build LogQL stream selector
-    let mut selector = format!(r#"{{namespace="{namespace}", pod="{pod}""#);
+    // Build LogQL stream selector. Escape backslashes / double-quotes in every
+    // label value so they embed safely in the LogQL string literals (same
+    // escaping applied to the line-filter `q` below).
+    let ns_lit = namespace.replace('\\', "\\\\").replace('"', "\\\"");
+    let pod_lit = pod.replace('\\', "\\\\").replace('"', "\\\"");
+    let mut selector = format!(r#"{{namespace="{ns_lit}", pod="{pod_lit}""#);
     if let Some(c) = container.filter(|c| !c.is_empty()) {
-        selector.push_str(&format!(r#", container="{c}""#));
+        let c_lit = c.replace('\\', "\\\\").replace('"', "\\\"");
+        selector.push_str(&format!(r#", container="{c_lit}""#));
     }
     selector.push('}');
 
@@ -282,10 +287,11 @@ pub async fn query_range_multi(
         .join("|");
 
     // Stream selector with a regex pod match. We escape backslashes / quotes
-    // produced by regex::escape so the alternation embeds safely in the LogQL
-    // string literal.
+    // in both the namespace label value and the alternation produced by
+    // regex::escape so they embed safely in the LogQL string literals.
+    let ns_lit = namespace.replace('\\', "\\\\").replace('"', "\\\"");
     let pod_alt_lit = pod_alt.replace('\\', "\\\\").replace('"', "\\\"");
-    let selector = format!(r#"{{namespace="{namespace}", pod=~"{pod_alt_lit}"}}"#);
+    let selector = format!(r#"{{namespace="{ns_lit}", pod=~"{pod_alt_lit}"}}"#);
 
     // Append line filter — substring uses `|=`, regex uses `|~`.
     let logql = if let Some(q) = search.filter(|s| !s.is_empty()) {
