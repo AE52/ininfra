@@ -46,6 +46,7 @@ pub static PERMS: &[Perm] = &[
     Perm { key: "hpa.read",           category: "workloads",       label: "View HPA",               mutating: false },
     Perm { key: "statefulsets.read",  category: "workloads",       label: "View statefulsets",      mutating: false },
     Perm { key: "pvc.read",           category: "storage",         label: "View PVCs",              mutating: false },
+    Perm { key: "secrets.read",       category: "storage",         label: "View secrets health",    mutating: false },
     Perm { key: "branches.read",      category: "ci_cd",           label: "View branches",          mutating: false },
     Perm { key: "status.read",        category: "infrastructure",  label: "View status",            mutating: false },
     Perm { key: "errors.read",        category: "administration",  label: "View errors",            mutating: false },
@@ -145,6 +146,9 @@ pub fn resolve(method: &Method, path: &str) -> Option<&'static str> {
         ["api", "pvc", _ns, _name, "file"] if matches!(method, &Method::PUT | &Method::DELETE)
             => Some("pvc.write"), // writing/deleting files on a persistent volume is a mutation
         ["api", "pvc", ..] => Some("pvc.read"),
+
+        // ── secrets health (read-only TLS cert metadata; never values) ───────
+        ["api", "secrets", ..] => Some("secrets.read"),
 
         // ── users ──────────────────────────────────────────────────────────
         ["api", "users"] | ["api", "users", _] => {

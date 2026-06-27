@@ -28,6 +28,7 @@
 //!   GET    /api/audit?cursor=&limit=
 //!   GET    /api/manifest/:kind/:ns/:name        (read-only raw YAML)
 //!   GET    /api/describe/:kind/:ns/:name        (read-only events + status summary)
+//!   GET    /api/secrets/health?ns=              (read-only TLS cert expiry scan)
 
 use axum::{routing::get, Router};
 
@@ -52,6 +53,7 @@ mod nodes;
 mod env;
 mod pods;
 mod pvc;
+mod secrets;
 mod services;
 mod setup;
 mod statefulsets;
@@ -84,6 +86,7 @@ pub fn router(state: AppState) -> Router {
         .merge(statefulsets::routes())
         .merge(events::routes())
         .merge(pvc::routes())
+        .merge(secrets::routes())
         .merge(users::routes())
         .merge(rbac::routes())
         .merge(deploy::routes())

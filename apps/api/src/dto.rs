@@ -998,6 +998,39 @@ pub struct Pvc {
 }
 
 /* ------------------------------------------------------------------ */
+/* Secrets health (TLS certificate expiry scanner)                      */
+/* ------------------------------------------------------------------ */
+
+/// Certificate metadata extracted from one `kubernetes.io/tls` Secret's
+/// `tls.crt` (the leaf certificate). Served by `GET /api/secrets/health`.
+///
+/// SECURITY: this carries ONLY non-sensitive certificate metadata. The private
+/// key (`tls.key`) is never read, and no raw certificate bytes are ever placed
+/// on the wire — only the parsed subject/issuer/validity fields below.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CertHealth {
+    pub namespace: String,
+    pub secret_name: String,
+    /// Subject Common Name (CN), when present in the certificate subject.
+    pub common_name: Option<String>,
+    /// Issuer, rendered as the issuer DN string.
+    pub issuer: Option<String>,
+    /// Validity window start (notBefore). `None` when the cert could not be parsed.
+    pub not_before: Option<Timestamp>,
+    /// Validity window end (notAfter). `None` when the cert could not be parsed.
+    pub not_after: Option<Timestamp>,
+    /// Whole days until `notAfter` relative to now. Negative when already expired.
+    /// `None` when the cert could not be parsed.
+    pub days_remaining: Option<i64>,
+    /// True when `notAfter` is in the past.
+    pub expired: bool,
+    /// Set when the `tls.crt` data was missing or could not be parsed; the row is
+    /// still returned (degrade gracefully) so operators can spot the broken secret.
+    pub parse_error: Option<String>,
+}
+
+/* ------------------------------------------------------------------ */
 /* RBAC (role_permissions matrix)                                      */
 /* ------------------------------------------------------------------ */
 
