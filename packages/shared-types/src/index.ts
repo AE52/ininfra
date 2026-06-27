@@ -1246,6 +1246,49 @@ export interface TopologyResponse {
 }
 
 /* ------------------------------------------------------------------ */
+/* Workload drift (live spec vs last-applied)                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * One field-level difference between the live object and its declared
+ * (last-applied) baseline. Values are stringified for stable comparison; a
+ * missing/absent value is `null`. `drifted` is `live !== applied`.
+ */
+export interface DriftField {
+  /** Dotted field path, e.g. "spec.replicas" or
+   * "spec.template.spec.containers[api].image". */
+  path: string;
+  /** Live value (stringified), or null when unset on the live object. */
+  live: string | null;
+  /** Declared (last-applied) value (stringified), or null when unset there. */
+  applied: string | null;
+  /** True when the live value differs from the declared value. */
+  drifted: boolean;
+}
+
+/**
+ * Read-only configuration-drift summary for one workload, served by
+ * `GET /api/drift/:kind/:ns/:name` (kind ∈ deployment | statefulset). Compares
+ * the live object against its
+ * `kubectl.kubernetes.io/last-applied-configuration` annotation. When that
+ * annotation is absent, `hasBaseline` is false and `fields` is empty (there is
+ * no declared baseline to diff against).
+ */
+export interface DriftResponse {
+  /** "deployment" | "statefulset". */
+  kind: string;
+  namespace: Namespace;
+  name: string;
+  /** True when a last-applied baseline was found (applied via `kubectl apply`). */
+  hasBaseline: boolean;
+  /** True when at least one compared field drifted. */
+  hasDrift: boolean;
+  /** Compared fields (replicas / per-container image / per-container cpu+mem
+   * request+limit). Empty when `hasBaseline` is false. */
+  fields: DriftField[];
+}
+
+/* ------------------------------------------------------------------ */
 /* PersistentVolumeClaims                                             */
 /* ------------------------------------------------------------------ */
 
