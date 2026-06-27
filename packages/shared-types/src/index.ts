@@ -1178,6 +1178,74 @@ export interface DescribeResponse {
 }
 
 /* ------------------------------------------------------------------ */
+/* Topology & PodDisruptionBudget safety view                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * One node hosting some of a workload's pods, with that node's zone (from
+ * `topology.kubernetes.io/zone`) and how many of the workload's pods land there.
+ */
+export interface TopologyNode {
+  node: string;
+  /** Node's availability zone, or null when the node carries no zone label. */
+  zone: string | null;
+  count: number;
+}
+
+/**
+ * Pod count grouped by availability zone. Pods on nodes without a zone label
+ * are bucketed under the `null` zone.
+ */
+export interface TopologyZone {
+  zone: string | null;
+  count: number;
+}
+
+/**
+ * The workload's PodDisruptionBudget, distilled to the fields that matter for a
+ * safety read: the configured budget plus the live status the disruption
+ * controller computes.
+ */
+export interface PdbStatus {
+  name: string;
+  /** `spec.minAvailable`, rendered as written (e.g. "2" or "50%"). */
+  minAvailable: string | null;
+  /** `spec.maxUnavailable`, rendered as written (e.g. "1" or "25%"). */
+  maxUnavailable: string | null;
+  currentHealthy: number;
+  desiredHealthy: number;
+  /** Voluntary evictions allowed right now; `0` means the budget is exhausted. */
+  disruptionsAllowed: number;
+  expectedPods: number;
+}
+
+/**
+ * Read-only pod-topology + PDB safety summary for one workload, served by
+ * `GET /api/topology/:kind/:ns/:name` (kind ∈ deployment | statefulset).
+ */
+export interface TopologyResponse {
+  namespace: Namespace;
+  name: string;
+  /** "deployment" | "statefulset". */
+  kind: string;
+  /** Total scheduled (has-nodeName) pods of this workload counted. */
+  totalPods: number;
+  /** Distribution across nodes, highest-count first. */
+  nodes: TopologyNode[];
+  /** Distribution across zones, highest-count first. */
+  zones: TopologyZone[];
+  /** True when every counted pod is on a single node (node-level SPOF). */
+  singleNode: boolean;
+  /**
+   * True when every counted pod is in a single zone AND the cluster has more
+   * than one zone (zone-level SPOF). A single-zone cluster is never flagged.
+   */
+  singleZone: boolean;
+  /** The matching PodDisruptionBudget, or null when the workload has none. */
+  pdb: PdbStatus | null;
+}
+
+/* ------------------------------------------------------------------ */
 /* PersistentVolumeClaims                                             */
 /* ------------------------------------------------------------------ */
 

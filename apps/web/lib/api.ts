@@ -66,6 +66,7 @@ import type {
   SetupStatus,
   StatefulSetSummary,
   StatusSummary,
+  TopologyResponse,
   TriggerJobAck,
   UpdateUserRequest,
   User,
@@ -82,6 +83,9 @@ export type ManifestKind =
 
 /** Kinds the read-only describe panel (`GET /api/describe/...`) supports. */
 export type DescribeKind = "deployment" | "statefulset" | "pod";
+
+/** Kinds the read-only topology view (`GET /api/topology/...`) supports. */
+export type TopologyKind = "deployment" | "statefulset";
 
 export class ApiClientError extends Error {
   constructor(
@@ -281,6 +285,20 @@ export function createApiClient(options: ApiClientOptions = {}) {
         cfg,
         "GET",
         `/api/describe/${kind}/${ns}/${name}`,
+      ),
+
+    /* ---- topology (read-only pod topology + PDB safety view) ---- */
+    /**
+     * Pod topology + PodDisruptionBudget safety view for one workload: where the
+     * replicas run (per-node and per-zone distribution), single-node/single-zone
+     * SPOF flags, and the matching PDB's budget/status (or null). Supported
+     * `kind`: "deployment" | "statefulset".
+     */
+    topology: (kind: TopologyKind, ns: Namespace, name: string) =>
+      request<TopologyResponse>(
+        cfg,
+        "GET",
+        `/api/topology/${kind}/${ns}/${name}`,
       ),
 
     /* ---- logs ---- */

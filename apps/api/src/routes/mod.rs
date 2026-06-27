@@ -35,6 +35,7 @@
 //!   GET    /api/audit?cursor=&limit=
 //!   GET    /api/manifest/:kind/:ns/:name        (read-only raw YAML)
 //!   GET    /api/describe/:kind/:ns/:name        (read-only events + status summary)
+//!   GET    /api/topology/:kind/:ns/:name        (read-only pod topology + PDB safety view)
 //!   GET    /api/secrets/health?ns=              (read-only TLS cert expiry scan)
 
 use axum::{routing::get, Router};
@@ -68,6 +69,7 @@ mod services;
 mod setup;
 mod statefulsets;
 mod status;
+mod topology;
 mod users;
 mod rbac;
 
@@ -110,6 +112,7 @@ pub fn router(state: AppState) -> Router {
         .merge(gateway::routes())
         .merge(manifest::routes())
         .merge(describe::routes())
+        .merge(topology::routes())
         .route("/api/auth/me", get(auth::me))
         // Layer order (outermost → innermost on request, innermost → outermost on response):
         //   require_auth (outermost) → capture_errors → enforce_permissions (innermost)

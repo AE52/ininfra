@@ -1226,6 +1226,82 @@ pub struct DescribeResponse {
 }
 
 /* ------------------------------------------------------------------ */
+/* Topology & PodDisruptionBudget safety view                          */
+/* ------------------------------------------------------------------ */
+
+/// One node hosting some of a workload's pods, with that node's zone (when the
+/// node carries `topology.kubernetes.io/zone`) and how many of the workload's
+/// pods land there.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopologyNode {
+    pub node: String,
+    /// `topology.kubernetes.io/zone` of the node, when labelled. `None` for
+    /// single-zone / unlabelled clusters.
+    pub zone: Option<String>,
+    /// Number of the workload's pods scheduled on this node.
+    pub count: i32,
+}
+
+/// Pod count grouped by availability zone (`topology.kubernetes.io/zone`).
+/// Pods on nodes without a zone label are bucketed under the `None` zone.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopologyZone {
+    pub zone: Option<String>,
+    pub count: i32,
+}
+
+/// The workload's PodDisruptionBudget, distilled to the fields that matter for a
+/// safety read: the configured budget (`minAvailable`/`maxUnavailable`, rendered
+/// as their `IntOrString` form) plus the live status the disruption controller
+/// computes. `None` (a missing PDB) is itself the interesting signal.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PdbStatus {
+    pub name: String,
+    /// `spec.minAvailable`, rendered as written (e.g. "2" or "50%"). Mutually
+    /// exclusive with `max_unavailable`.
+    pub min_available: Option<String>,
+    /// `spec.maxUnavailable`, rendered as written (e.g. "1" or "25%").
+    pub max_unavailable: Option<String>,
+    /// `status.currentHealthy` — pods currently counted as healthy.
+    pub current_healthy: i32,
+    /// `status.desiredHealthy` — minimum healthy required by the budget.
+    pub desired_healthy: i32,
+    /// `status.disruptionsAllowed` — how many voluntary evictions are allowed
+    /// right now. `0` means the budget is fully consumed (e.g. a drain blocks).
+    pub disruptions_allowed: i32,
+    /// `status.expectedPods` — total pods the budget counts.
+    pub expected_pods: i32,
+}
+
+/// Read-only pod-topology + PDB safety summary for one workload.
+/// Served by `GET /api/topology/:kind/:ns/:name` (kind ∈ deployment | statefulset).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopologyResponse {
+    pub namespace: String,
+    pub name: String,
+    /// "deployment" | "statefulset" (lowercased).
+    pub kind: String,
+    /// Total scheduled (Running/has-nodeName) pods of this workload counted.
+    pub total_pods: i32,
+    /// Distribution across nodes, highest-count first.
+    pub nodes: Vec<TopologyNode>,
+    /// Distribution across zones, highest-count first.
+    pub zones: Vec<TopologyZone>,
+    /// True when every counted pod is on a single node (a node-level SPOF).
+    pub single_node: bool,
+    /// True when every counted pod is in a single zone AND the cluster has more
+    /// than one zone (a zone-level SPOF worth flagging). A single-zone cluster
+    /// can't spread, so it is not flagged.
+    pub single_zone: bool,
+    /// The matching PodDisruptionBudget, or `None` when the workload has none.
+    pub pdb: Option<PdbStatus>,
+}
+
+/* ------------------------------------------------------------------ */
 /* PersistentVolumeClaims                                              */
 /* ------------------------------------------------------------------ */
 
