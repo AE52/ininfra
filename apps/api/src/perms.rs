@@ -39,6 +39,7 @@ pub static PERMS: &[Perm] = &[
     Perm { key: "logs.read",          category: "workloads",       label: "View logs",              mutating: false },
     Perm { key: "env.read",           category: "workloads",       label: "View env",               mutating: false },
     Perm { key: "nodes.read",         category: "infrastructure",  label: "View nodes",             mutating: false },
+    Perm { key: "rightsizing.read",   category: "infrastructure",  label: "View right-sizing",      mutating: false },
     Perm { key: "events.read",        category: "infrastructure",  label: "View events",            mutating: false },
     Perm { key: "audit.read",         category: "administration",  label: "View audit log",         mutating: false },
     Perm { key: "builds.read",        category: "ci_cd",           label: "View builds",            mutating: false },
@@ -123,6 +124,9 @@ pub fn resolve(method: &Method, path: &str) -> Option<&'static str> {
         ["api", "nodes", _name, "cordon"] if *method == Method::POST
             => Some("nodes.cordon"),
         ["api", "nodes", ..] => Some("nodes.read"),
+
+        // ── right-sizing (read-only advisory) ────────────────────────────────
+        ["api", "rightsizing", ..] => Some("rightsizing.read"),
 
         // ── audit ──────────────────────────────────────────────────────────
         ["api", "audit", ..] => Some("audit.read"),

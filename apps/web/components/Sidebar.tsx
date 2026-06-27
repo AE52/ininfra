@@ -62,6 +62,7 @@ function buildNav(t: ReturnType<typeof useT>): NavGroup[] {
       title: t.nav.compute,
       items: [
         { href: "/nodes", label: t.nav.nodes, match: (p) => p.startsWith("/nodes"), icon: "M5 4h14v6H5zM5 14h14v6H5zM8 7h.01M8 17h.01" },
+        { href: "/rightsizing", label: t.nav.rightsizing, match: (p) => p.startsWith("/rightsizing"), icon: "M3 12h4l3 8 4-16 3 8h4" },
       ],
     },
     {
