@@ -175,6 +175,15 @@ function NodeCard({ n }: { n: NodeInfo }) {
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
           <CapacityBadge type={n.capacityType} />
+          {n.unschedulable && (
+            <Badge
+              variant="outline"
+              className="gap-1.5 border-pf-gold/30 bg-pf-gold-50 text-[#8a6d00]"
+            >
+              <Dot className="bg-[#8a6d00]" />
+              Cordoned
+            </Badge>
+          )}
           <Badge
             variant="outline"
             className={

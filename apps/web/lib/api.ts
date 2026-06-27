@@ -20,6 +20,7 @@ import type {
   BuildJob,
   BuildSubmit,
   ClientErrorReport,
+  CordonRequest,
   DeployInfo,
   Deployment,
   EcrImage,
@@ -344,6 +345,14 @@ export function createApiClient(options: ApiClientOptions = {}) {
       ),
     getNode: (name: string) =>
       request<NodeDetail>(cfg, "GET", `/api/nodes/${name}`),
+    /**
+     * Cordon (unschedulable: true) or uncordon (false) a node. Admin only —
+     * the API rejects non-admin callers. Returns a MutationAck.
+     */
+    setNodeCordon: (name: string, unschedulable: boolean) =>
+      request<MutationAck>(cfg, "POST", `/api/nodes/${name}/cordon`, {
+        unschedulable,
+      } satisfies CordonRequest),
 
     /* ---- audit ---- */
     listAudit: (

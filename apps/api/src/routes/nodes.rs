@@ -4,18 +4,20 @@ use std::collections::BTreeMap;
 
 use axum::{
     extract::{Path, Query, State},
-    routing::get,
+    routing::{get, post},
     Json, Router,
 };
 use k8s_openapi::api::core::v1::{Node as K8sNode, Pod as K8sPod};
-use kube::api::{DynamicObject, ListParams};
+use kube::api::{DynamicObject, ListParams, Patch, PatchParams};
 use kube::core::{ApiResource, GroupVersionKind};
 use kube::Api;
 
+use crate::auth::AdminIdentity;
 use crate::conv;
+use crate::db::{insert_audit, NewAudit};
 use crate::dto::{
-    NodeCondition, NodeDetail, NodeInfo, NodeSystemInfo, NodeTaint, Page, PageQuery, PodSummary,
-    ResourceAllocation,
+    AuditAction, CordonRequest, MutationAck, NodeCondition, NodeDetail, NodeInfo, NodeSystemInfo,
+    NodeTaint, Page, PageQuery, PodSummary, ResourceAllocation,
 };
 use crate::error::{ApiError, ApiResult};
 use crate::AppState;
@@ -24,6 +26,7 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/api/nodes", get(list_nodes))
         .route("/api/nodes/:name", get(get_node))
+        .route("/api/nodes/:name/cordon", post(cordon_node))
 }
 
 /// Live per-node usage (cpu, memory) from metrics-server. Best-effort: returns
@@ -311,6 +314,51 @@ async fn get_node(
     }))
 }
 
+/// Cordon (`unschedulable: true`) or uncordon (`unschedulable: false`) a node.
+///
+/// Admin-only: the `AdminIdentity` extractor rejects developers/viewers at the
+/// handler level (and the `enforce_permissions` middleware gates the
+/// `nodes.cordon` key as a mutation, denied to developers by default). Nodes are
+/// cluster-scoped, so there is no namespace check. The change is a kube JSON
+/// merge-patch of `spec.unschedulable`, and the action is audited.
+async fn cordon_node(
+    AdminIdentity(identity): AdminIdentity,
+    State(st): State<AppState>,
+    Path(name): Path<String>,
+    Json(body): Json<CordonRequest>,
+) -> ApiResult<Json<MutationAck>> {
+    let nodes: Api<K8sNode> = Api::all(st.kube.clone());
+
+    // Read current state for the audit diff (and to 404 cleanly before mutating).
+    let current = nodes
+        .get_opt(&name)
+        .await?
+        .ok_or_else(|| ApiError::NotFound(format!("node {name}")))?;
+    let previous = conv::node_unschedulable(&current);
+
+    // Merge-patch only spec.unschedulable. `null` would clear the field (k8s
+    // treats absent as schedulable), so we always set the explicit boolean.
+    let patch = serde_json::json!({ "spec": { "unschedulable": body.unschedulable } });
+    nodes
+        .patch(&name, &PatchParams::default(), &Patch::Merge(&patch))
+        .await?;
+
+    let audit_id = insert_audit(
+        &st.db,
+        NewAudit {
+            actor: &identity.username,
+            action: AuditAction::CordonNode,
+            target_ns: None,
+            target_kind: Some("Node"),
+            target_name: Some(&name),
+            detail: serde_json::json!({ "from": previous, "to": body.unschedulable }),
+        },
+    )
+    .await?;
+
+    Ok(Json(MutationAck::ok(Some(audit_id))))
+}
+
 async fn list_nodes(
     State(st): State<AppState>,
     Query(page): Query<PageQuery>,
@@ -399,5 +447,6 @@ fn to_dto(
         created_at: conv::created_at(n.metadata.creation_timestamp.as_ref()),
         spot: conv::node_is_spot(n),
         capacity_type: conv::node_capacity_type(n).to_string(),
+        unschedulable: conv::node_unschedulable(n),
     }
 }

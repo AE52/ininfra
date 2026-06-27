@@ -53,6 +53,7 @@ const ACTION_VALUES: AuditAction[] = [
   "delete_image",
   "edit_gateway",
   "edit_rbac",
+  "cordon_node",
 ];
 
 const actionMeta: Record<AuditAction, { label: string; cls: string }> = {
@@ -74,6 +75,7 @@ const actionMeta: Record<AuditAction, { label: string; cls: string }> = {
   delete_image: { label: "delete image", cls: "text-pf-red bg-pf-red-50" },
   edit_gateway: { label: "edit gateway", cls: "text-violet-700 bg-violet-50" },
   edit_rbac: { label: "edit rbac", cls: "text-violet-700 bg-violet-50" },
+  cordon_node: { label: "cordon node", cls: "text-[#8a6d00] bg-pf-gold-50" },
 };
 
 // ── Regex validation (client-side preview) ─────────────────────────────────
