@@ -23,7 +23,7 @@ import {
 export default function BranchesPage() {
   const toast = useToast();
   const t = useT();
-  const { managedNamespaces } = useConfig();
+  const { managedNamespaces, features } = useConfig();
   // The build catalog lives in the first managed namespace.
   const ns = managedNamespaces[0] ?? "";
   const [rows, setRows] = useState<BuildConfigService[] | null>(null);
@@ -61,6 +61,20 @@ export default function BranchesPage() {
     }
   }
 
+  // CI/CD off → render the same "not configured" empty state the gateway uses,
+  // rather than a working-looking-but-broken branch table.
+  if (!features.jenkins) {
+    return (
+      <div className="animate-fade-in">
+        <PageHeader kicker={t.branches.kicker} title={t.branches.title} />
+        <EmptyState
+          title="CI/CD is not configured"
+          body="Set the Jenkins integration environment variables on the API to manage which branch each service builds from."
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in">
       <PageHeader
@@ -68,6 +82,15 @@ export default function BranchesPage() {
         title={t.branches.title}
         subtitle={t.branches.subtitle}
       />
+      {!ns ? (
+        // No managed namespace → the loader can never fetch a catalog, so show
+        // an explicit empty state instead of a permanent "Loading…".
+        <EmptyState
+          title="No managed namespace configured"
+          body="Set MANAGED_NAMESPACES on the API to enable branch management for your services."
+        />
+      ) : (
+        <>
       {error && <ErrorPanel message={error} />}
       {rows && rows.length === 0 && <EmptyState title={t.branches.noServices} />}
       {rows && rows.length > 0 && (
@@ -126,6 +149,8 @@ export default function BranchesPage() {
         </Card>
       )}
       {!rows && !error && <div className="text-sm text-ink-faint">{t.branches.loading}</div>}
+        </>
+      )}
     </div>
   );
 }

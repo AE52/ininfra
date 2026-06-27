@@ -18,7 +18,7 @@ type NavItem = {
   /** When true, only render for super_admin. */
   superAdminOnly?: boolean;
   /** When set, only render if the named feature flag is enabled. */
-  feature?: "gateway";
+  feature?: "gateway" | "jenkins";
 };
 type NavGroup = { title: string; items: NavItem[] };
 
@@ -46,8 +46,8 @@ function buildNav(t: ReturnType<typeof useT>): NavGroup[] {
     {
       title: t.nav.builds,
       items: [
-        { href: "/builds", label: t.nav.builds, match: (p) => p.startsWith("/builds"), icon: "M12 3v3m0 12v3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M3 12h3m12 0h3M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1" },
-        { href: "/branches", label: t.nav.branches, match: (p) => p.startsWith("/branches"), icon: "M6 3v12m0 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm12-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm-3 3v2a4 4 0 0 1-4 4H6" },
+        { href: "/builds", label: t.nav.builds, match: (p) => p.startsWith("/builds"), feature: "jenkins", icon: "M12 3v3m0 12v3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M3 12h3m12 0h3M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1" },
+        { href: "/branches", label: t.nav.branches, match: (p) => p.startsWith("/branches"), feature: "jenkins", icon: "M6 3v12m0 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm12-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm-3 3v2a4 4 0 0 1-4 4H6" },
       ],
     },
     {

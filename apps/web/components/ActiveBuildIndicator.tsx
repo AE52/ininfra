@@ -7,6 +7,7 @@ import { Hammer } from "lucide-react";
 import type { BuildJob } from "@ininfra/shared-types";
 import { api } from "@/lib/api";
 import { isPublicRoute } from "@/lib/routes";
+import { useConfig } from "@/components/ConfigProvider";
 
 /**
  * Floating bottom-right indicator showing how many CI/CD builds are currently
@@ -15,10 +16,12 @@ import { isPublicRoute } from "@/lib/routes";
  */
 export function ActiveBuildIndicator() {
   const pathname = usePathname();
+  const { features } = useConfig();
   // Public pages have no session. Polling the auth-gated builds API there 401s,
   // and the API client turns a 401 into window.location="/login" — which would
-  // loop. Don't run on those routes.
-  const disabled = isPublicRoute(pathname ?? "");
+  // loop. Don't run on those routes. Also skip entirely when CI is off, since
+  // the builds API is unavailable and there is never anything to indicate.
+  const disabled = isPublicRoute(pathname ?? "") || !features.jenkins;
   const [active, setActive] = useState<BuildJob[]>([]);
 
   useEffect(() => {
