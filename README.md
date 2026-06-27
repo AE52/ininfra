@@ -34,12 +34,30 @@ it is all configuration (see [docs/CONFIGURATION.md](docs/CONFIGURATION.md)).
   build history, resolve the git commit currently deployed (via image tags /
   optional ECR), and roll back to a previous image.
 - **Autoscaling** — view and edit HorizontalPodAutoscalers.
-- **Nodes** — cluster-wide node inventory and the pods scheduled on each.
+- **Nodes** — cluster-wide node inventory with live CPU/memory usage and the
+  pods scheduled on each; cordon / uncordon a node (admin, audited).
+- **Jobs & CronJobs** — list CronJobs and recent Jobs; suspend/resume a CronJob
+  and trigger a run on demand (audited).
+- **Manifest (YAML)** — view the live object exactly as the API server has it,
+  with managed fields and the last-applied annotation stripped, copy to clipboard.
+- **Describe & events** — per-object conditions, container status, and the
+  resource's recent Kubernetes events, right on the detail page.
+- **Drift** — see how a workload's live spec differs from its last-applied
+  configuration (image, replicas, resource requests/limits).
+- **Topology & disruption budget** — where a workload's replicas run across
+  nodes and zones (single-node/zone SPOF flags) and its PodDisruptionBudget.
+- **Capacity & quotas** — per-node allocatable vs requested vs used with cluster
+  headroom, plus per-namespace ResourceQuota / LimitRange usage.
+- **Right-sizing** — configured requests/limits next to live usage with
+  over/under-provisioned recommendations (advisory, read-only).
+- **Secrets health** — TLS certificate expiry scanner (days remaining, never
+  reveals secret values).
+- **kubectl helper** — copy the equivalent kubectl commands for any workload or pod.
 - **Services & ingresses** — see how workloads are exposed.
-- **Users & roles** — create console users with `admin` or `viewer` roles
-  (admin-managed).
+- **Users & roles** — create console users with `developer`, `admin`, or
+  `super_admin` roles; per-endpoint RBAC enforced on the API.
 - **Audit log** — cursor-paginated, time-ordered record of every mutating
-  action, attributed to the acting user.
+  action, attributed to the acting user (admin-only).
 - **Error feed** — a Sentry-style feed of captured client and API errors.
 - **Status page** — an Atlassian-style status page backed by a background health
   monitor that records component health transitions.
