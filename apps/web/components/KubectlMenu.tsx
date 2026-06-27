@@ -23,14 +23,16 @@ type KubectlItem = {
 
 /**
  * Copy-kubectl-command helper. Renders a small "kubectl" button that opens a
- * dropdown of equivalent kubectl commands for a Deployment or a Pod. Clicking
- * an item copies the raw command to the clipboard — nothing is executed and the
- * cluster is never mutated by this component. Reuses the shared Radix dropdown
- * primitive (keyboard + focus handled by Radix) and the app's toast.
+ * dropdown of equivalent kubectl commands for a Deployment, a StatefulSet, or a
+ * Pod. Clicking an item copies the raw command to the clipboard — nothing is
+ * executed and the cluster is never mutated by this component. Reuses the shared
+ * Radix dropdown primitive (keyboard + focus handled by Radix) and the app's
+ * toast.
  */
 export function KubectlMenu(
   props:
     | { target: "deployment"; ns: Namespace; name: string; compact?: boolean }
+    | { target: "statefulset"; ns: Namespace; name: string; compact?: boolean }
     | { target: "pod"; ns: Namespace; name: string; compact?: boolean },
 ) {
   const { target, ns, name, compact = false } = props;
@@ -46,14 +48,23 @@ export function KubectlMenu(
           { label: "Rollout status", command: `kubectl -n ${ns} rollout status deployment/${name}` },
           { label: "Scale to 3", command: `kubectl -n ${ns} scale deployment/${name} --replicas=3` },
         ]
-      : [
-          { label: "Logs (follow)", command: `kubectl -n ${ns} logs ${name} -f` },
-          { label: "Exec shell", command: `kubectl -n ${ns} exec -it ${name} -- sh` },
-          { label: "Describe", command: `kubectl -n ${ns} describe pod ${name}` },
-          { label: "Get YAML", command: `kubectl -n ${ns} get pod ${name} -o yaml` },
-          { label: "Port-forward", command: `kubectl -n ${ns} port-forward ${name} 8080:80` },
-          { label: "Delete pod", command: `kubectl -n ${ns} delete pod ${name}` },
-        ];
+      : target === "statefulset"
+        ? [
+            { label: "Get YAML", command: `kubectl -n ${ns} get statefulset ${name} -o yaml` },
+            { label: "Describe", command: `kubectl -n ${ns} describe statefulset ${name}` },
+            { label: "Logs (follow, all containers)", command: `kubectl -n ${ns} logs statefulset/${name} -f --all-containers` },
+            { label: "Rollout restart", command: `kubectl -n ${ns} rollout restart statefulset/${name}` },
+            { label: "Rollout status", command: `kubectl -n ${ns} rollout status statefulset/${name}` },
+            { label: "Scale to 3", command: `kubectl -n ${ns} scale statefulset/${name} --replicas=3` },
+          ]
+        : [
+            { label: "Logs (follow)", command: `kubectl -n ${ns} logs ${name} -f` },
+            { label: "Exec shell", command: `kubectl -n ${ns} exec -it ${name} -- sh` },
+            { label: "Describe", command: `kubectl -n ${ns} describe pod ${name}` },
+            { label: "Get YAML", command: `kubectl -n ${ns} get pod ${name} -o yaml` },
+            { label: "Port-forward", command: `kubectl -n ${ns} port-forward ${name} 8080:80` },
+            { label: "Delete pod", command: `kubectl -n ${ns} delete pod ${name}` },
+          ];
 
   async function copy(item: KubectlItem) {
     try {

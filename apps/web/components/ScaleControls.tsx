@@ -17,11 +17,17 @@ export function ScaleControls({
   name,
   desired,
   ready,
+  kind = "deployment",
 }: {
   ns: Namespace;
   name: string;
   desired: number;
   ready: number;
+  /**
+   * Workload kind to scale/restart. Controls which API endpoint is hit —
+   * deployment endpoints by default, statefulset endpoints when "statefulset".
+   */
+  kind?: "deployment" | "statefulset";
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -31,6 +37,11 @@ export function ScaleControls({
 
   const dirty = target !== desired;
   const sliderMax = Math.max(MAX, desired + 2);
+
+  const scaleFn =
+    kind === "statefulset" ? api.scaleStatefulSet : api.scaleDeployment;
+  const restartFn =
+    kind === "statefulset" ? api.restartStatefulSet : api.restartDeployment;
 
   function apply() {
     // Scaling to zero takes the workload fully offline — confirm first.
@@ -44,7 +55,7 @@ export function ScaleControls({
     }
     startSaving(async () => {
       try {
-        await api.scaleDeployment(ns, name, { replicas: target });
+        await scaleFn(ns, name, { replicas: target });
         toast("success", `Scaling ${name} → ${target} replica(s)`);
         router.refresh();
       } catch (e) {
@@ -65,7 +76,7 @@ export function ScaleControls({
     }
     setRestarting(true);
     try {
-      await api.restartDeployment(ns, name);
+      await restartFn(ns, name);
       toast("success", `Rollout restart triggered for ${name}`);
       router.refresh();
     } catch (e) {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { Namespace, StatefulSetSummary } from "@ininfra/shared-types";
 import { api, ApiClientError } from "@/lib/api";
@@ -102,7 +103,12 @@ export default function StatefulPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <HealthBadge status={s.health} />
-                    <span className="font-medium text-ink">{s.name}</span>
+                    <Link
+                      href={`/stateful/${s.namespace}/${s.name}`}
+                      className="font-medium text-ink hover:text-pf-blue"
+                    >
+                      {s.name}
+                    </Link>
                     <NamespaceTag ns={s.namespace} />
                   </div>
                   <div className="mt-1 font-mono text-[11px] text-ink-faint">
