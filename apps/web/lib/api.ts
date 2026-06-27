@@ -19,6 +19,7 @@ import type {
   BuildConfigService,
   BuildJob,
   BuildSubmit,
+  CapacityResponse,
   CertHealth,
   ClientErrorReport,
   CordonRequest,
@@ -39,6 +40,7 @@ import type {
   GatewayRequest,
   JobSummary,
   ManifestResponse,
+  NamespaceQuota,
   NewFavorite,
   SearchResult,
   Hpa,
@@ -414,6 +416,21 @@ export function createApiClient(options: ApiClientOptions = {}) {
         "GET",
         `/api/rightsizing${q({ ns, cursor: opts.cursor, limit: opts.limit })}`,
       ),
+
+    /* ---- capacity & quotas (read-only) ---- */
+    /**
+     * Cluster capacity rollup: per-node allocatable vs requested vs live-used
+     * CPU/memory with schedulable headroom, plus a cluster total. Usage degrades
+     * to null when metrics-server is absent. Read-only.
+     */
+    getCapacity: () => request<CapacityResponse>(cfg, "GET", "/api/capacity"),
+    /**
+     * Per-namespace ResourceQuota usage (used/hard) and LimitRange defaults.
+     * Pass `ns` for a single managed namespace, or omit to scan all managed
+     * namespaces. Read-only.
+     */
+    listQuotas: (ns?: Namespace) =>
+      request<NamespaceQuota[]>(cfg, "GET", `/api/quotas${q({ ns })}`),
 
     /* ---- audit ---- */
     listAudit: (

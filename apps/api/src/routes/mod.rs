@@ -26,6 +26,8 @@
 //!   GET    /api/builds/:job/:number
 //!   GET    /api/nodes
 //!   GET    /api/rightsizing?ns=            (read-only resource right-sizing advisory)
+//!   GET    /api/capacity                   (read-only cluster capacity rollup)
+//!   GET    /api/quotas?ns=                 (read-only ResourceQuota + LimitRange)
 //!   GET    /api/cronjobs?ns=
 //!   GET    /api/jobs?ns=
 //!   PATCH  /api/cronjobs/:ns/:name/suspend        body SuspendRequest
@@ -43,6 +45,7 @@ mod audit;
 mod auth;
 mod build_config;
 mod builds;
+mod capacity;
 mod deploy;
 mod deployments;
 mod describe;
@@ -88,6 +91,7 @@ pub fn router(state: AppState) -> Router {
         .merge(builds::routes())
         .merge(nodes::routes())
         .merge(rightsizing::routes())
+        .merge(capacity::routes())
         .merge(audit::routes())
         .merge(build_config::routes())
         .merge(hpa::routes())
