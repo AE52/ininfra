@@ -71,7 +71,14 @@ async fn list_services(
 ) -> ApiResult<Json<Vec<BuildConfigService>>> {
     require_namespace(&ns)?;
     let api: Api<ConfigMap> = Api::namespaced(st.kube.clone(), &ns);
-    let arr = load_catalog(&api).await?;
+    // The build catalog is OPTIONAL. When the ConfigMap (or its services.json
+    // key) is absent, there is nothing to manage — return an empty list (200)
+    // so the UI shows a clean "no catalog" state instead of a 404.
+    let arr = match load_catalog(&api).await {
+        Ok(a) => a,
+        Err(ApiError::NotFound(_)) => return Ok(Json(Vec::new())),
+        Err(e) => return Err(e),
+    };
 
     let mut out: Vec<BuildConfigService> = arr
         .iter()
