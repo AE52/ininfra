@@ -967,6 +967,38 @@ export interface Pvc {
 }
 
 /* ------------------------------------------------------------------ */
+/* Secrets health (TLS certificate expiry scanner)                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Certificate metadata for one `kubernetes.io/tls` Secret, served by
+ * `GET /api/secrets/health?ns=`. Sorted soonest-to-expire (and already-expired)
+ * first by the API.
+ *
+ * SECURITY: carries ONLY non-sensitive certificate metadata. The private key is
+ * never read and no raw certificate bytes are ever sent — only the parsed
+ * subject/issuer/validity fields below.
+ */
+export interface CertHealth {
+  namespace: Namespace;
+  secretName: string;
+  /** Subject Common Name (CN), when present. */
+  commonName: string | null;
+  /** Issuer distinguished name. */
+  issuer: string | null;
+  /** Validity start (notBefore); null when the cert could not be parsed. */
+  notBefore: Timestamp | null;
+  /** Validity end (notAfter); null when the cert could not be parsed. */
+  notAfter: Timestamp | null;
+  /** Whole days until notAfter (negative if expired); null when unparseable. */
+  daysRemaining: number | null;
+  /** True when notAfter is in the past. */
+  expired: boolean;
+  /** Set when tls.crt was missing/unparseable; the row is still returned. */
+  parseError: string | null;
+}
+
+/* ------------------------------------------------------------------ */
 /* RBAC                                                                */
 /* ------------------------------------------------------------------ */
 

@@ -37,6 +37,7 @@ const tr = {
     builds: "Build'ler",
     branches: "Branch'ler",
     storage: "Depolama",
+    secrets: "Secret Sağlığı",
     compute: "Hesaplama",
     nodes: "Node'lar",
     administration: "Yönetim",
@@ -167,6 +168,31 @@ const tr = {
     browseLinkText: "Dosyaları gör →",
     noPvc: "Bu namespace'te PVC yok",
     idle: "boşta",
+    loading: "Yükleniyor…",
+  },
+
+  // ── Secrets health page ───────────────────────────────────────────────────
+  secrets: {
+    kicker: "Güvenlik",
+    title: "Secret Sağlığı",
+    subtitle:
+      "kubernetes.io/tls secret'larındaki sertifikaların son kullanma tarihleri. Yalnızca metadata gösterilir — secret değerleri asla okunmaz.",
+    allNamespaces: "Tüm namespace'ler",
+    colNamespace: "Namespace",
+    colSecret: "Secret",
+    colCommonName: "Common name",
+    colIssuer: "Veren (Issuer)",
+    colExpires: "Bitiş",
+    colDaysLeft: "Kalan gün",
+    statTotal: "TLS secret",
+    statExpiringSoon: "30 günden az",
+    statExpired: "Süresi dolmuş",
+    badgeExpired: "Süresi dolmuş",
+    badgeDays: (n: number) => `${n} gün`,
+    parseErrorLabel: "ayrıştırılamadı",
+    noSecrets: "TLS secret bulunamadı",
+    noSecretsBody:
+      "Seçili kapsamda kubernetes.io/tls türünde secret yok.",
     loading: "Yükleniyor…",
   },
 
@@ -418,6 +444,7 @@ const en: Translations = {
     builds: "Builds",
     branches: "Branches",
     storage: "Storage",
+    secrets: "Secrets health",
     compute: "Compute",
     nodes: "Nodes",
     administration: "Administration",
@@ -542,6 +569,30 @@ const en: Translations = {
     browseLinkText: "Browse files →",
     noPvc: "No PVCs in this namespace",
     idle: "idle",
+    loading: "Loading…",
+  },
+
+  secrets: {
+    kicker: "Security",
+    title: "Secrets health",
+    subtitle:
+      "Expiry of certificates in kubernetes.io/tls secrets. Metadata only — secret values are never read.",
+    allNamespaces: "All namespaces",
+    colNamespace: "Namespace",
+    colSecret: "Secret",
+    colCommonName: "Common name",
+    colIssuer: "Issuer",
+    colExpires: "Expires",
+    colDaysLeft: "Days left",
+    statTotal: "TLS secrets",
+    statExpiringSoon: "Under 30 days",
+    statExpired: "Expired",
+    badgeExpired: "Expired",
+    badgeDays: (n: number) => `${n}d`,
+    parseErrorLabel: "parse error",
+    noSecrets: "No TLS secrets found",
+    noSecretsBody:
+      "No kubernetes.io/tls secrets in the selected scope.",
     loading: "Loading…",
   },
 

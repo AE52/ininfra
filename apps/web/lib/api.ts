@@ -19,6 +19,7 @@ import type {
   BuildConfigService,
   BuildJob,
   BuildSubmit,
+  CertHealth,
   ClientErrorReport,
   CordonRequest,
   DeployInfo,
@@ -517,6 +518,16 @@ export function createApiClient(options: ApiClientOptions = {}) {
 
     /* ---- storage (PVC) ---- */
     listPvcs: (ns: Namespace) => request<Pvc[]>(cfg, "GET", `/api/pvc/${ns}`),
+
+    /* ---- secrets health (read-only TLS cert expiry; never values) ---- */
+    /**
+     * TLS certificate expiry scan across `kubernetes.io/tls` secrets. Pass `ns`
+     * to scan a single managed namespace, or omit it to scan all managed
+     * namespaces. The API returns metadata only (subject/issuer/validity), sorted
+     * soonest-to-expire (and already-expired) first — never any secret value.
+     */
+    secretsHealth: (ns?: Namespace) =>
+      request<CertHealth[]>(cfg, "GET", `/api/secrets/health${q({ ns })}`),
 
     /* ---- PVC file browser (exec into the mounting pod) ---- */
     listPvcFiles: (

@@ -68,6 +68,13 @@ regex = { version = "1", default-features = false, features = ["std"] }
 # Secret value (de)coding for the env editor
 base64 = "0.22"
 
+# X.509 / PEM parsing for the read-only TLS-secret expiry scanner. We only ever
+# read certificate METADATA (subject CN, issuer, notBefore/notAfter) out of the
+# `tls.crt` member of `kubernetes.io/tls` secrets — never the private key, and
+# never any raw bytes. `x509-parser` bundles a PEM reader (`pem` module), so no
+# separate pem/rustls-pemfile crate is needed.
+x509-parser = "0.16"
+
 # Authentication: argon2id password hashing + HS256 session JWTs.
 argon2 = { version = "0.5", features = ["std"] }
 rand_core = { version = "0.6", features = ["getrandom"] }
