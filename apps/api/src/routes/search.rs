@@ -52,7 +52,15 @@ async fn search(
     let matches = |name: &str| name.to_lowercase().contains(&q);
 
     let namespaces: Vec<String> = match &qp.namespace {
-        Some(ns) if !ns.is_empty() => vec![ns.clone()],
+        // An explicit single namespace must be inside the managed allowlist —
+        // otherwise an authenticated user could read resources from arbitrary
+        // namespaces (e.g. kube-system). Reject out-of-scope namespaces with
+        // 403 (same guard every other handler funnels through) before querying.
+        Some(ns) if !ns.is_empty() => {
+            crate::k8s::require_namespace(ns)?;
+            vec![ns.clone()]
+        }
+        // No namespace → search across all managed namespaces (unchanged).
         _ => crate::k8s::managed_namespaces().to_vec(),
     };
 
@@ -181,8 +189,8 @@ async fn search(
         }
     }
 
-    // Console users (admin only).
-    if want("user") && identity.role == "admin" {
+    // Console users (admin / super_admin only).
+    if want("user") && (identity.role == "admin" || identity.role == "super_admin") {
         if let Ok(page) = crate::db::list_users(&st.db, None, 500).await {
             for u in page.items {
                 if matches(&u.username) {
