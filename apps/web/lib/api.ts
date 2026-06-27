@@ -34,6 +34,7 @@ import type {
   GatewayError,
   GatewayLogEntry,
   GatewayRequest,
+  ManifestResponse,
   NewFavorite,
   SearchResult,
   Hpa,
@@ -62,6 +63,14 @@ import type {
   User,
   WriteFileRequest,
 } from "@ininfra/shared-types";
+
+/** Kinds the read-only manifest viewer (`GET /api/manifest/...`) supports. */
+export type ManifestKind =
+  | "deployment"
+  | "statefulset"
+  | "pod"
+  | "service"
+  | "configmap";
 
 export class ApiClientError extends Error {
   constructor(
@@ -235,6 +244,20 @@ export function createApiClient(options: ApiClientOptions = {}) {
       ),
     deletePod: (ns: Namespace, name: string) =>
       request<MutationAck>(cfg, "DELETE", `/api/pods/${ns}/${name}`),
+
+    /* ---- raw manifest (read-only YAML) ---- */
+    /**
+     * Fetch the live object's sanitized manifest as a YAML string. Read-only;
+     * the server strips `metadata.managedFields` and the kubectl
+     * last-applied-configuration annotation. Supported `kind` values:
+     * "deployment" | "statefulset" | "pod" | "service" | "configmap".
+     */
+    getManifest: (kind: ManifestKind, ns: Namespace, name: string) =>
+      request<ManifestResponse>(
+        cfg,
+        "GET",
+        `/api/manifest/${kind}/${ns}/${name}`,
+      ),
 
     /* ---- logs ---- */
     /** Snapshot of recent log lines (Loki-backed). For live streaming use streamLogsUrl(). */

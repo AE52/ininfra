@@ -6,6 +6,7 @@ import type { Namespace, PodSummary } from "@ininfra/shared-types";
 import { api, ApiClientError } from "@/lib/api";
 import { cx, cpuToCores, fmtBytes, memToBytes, timeAgo } from "@/lib/format";
 import { PhaseBadge } from "@/components/StatusBadge";
+import { ManifestViewer } from "@/components/ManifestViewer";
 import { useToast } from "@/components/Toast";
 import { Card } from "@/components/ui/card";
 import {
@@ -115,14 +116,17 @@ export function PodsTable({
                     {timeAgo(p.startedAt)}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => del(p.name)}
-                      disabled={deleting === p.name}
-                      className="text-xs text-ink-faint hover:text-pf-red disabled:opacity-40"
-                    >
-                      {deleting === p.name ? "deleting…" : "delete"}
-                    </button>
+                    <div className="flex items-center justify-end gap-3">
+                      <ManifestViewer kind="pod" ns={ns} name={p.name} compact />
+                      <button
+                        type="button"
+                        onClick={() => del(p.name)}
+                        disabled={deleting === p.name}
+                        className="text-xs text-ink-faint hover:text-pf-red disabled:opacity-40"
+                      >
+                        {deleting === p.name ? "deleting…" : "delete"}
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );

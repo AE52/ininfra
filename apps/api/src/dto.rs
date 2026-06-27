@@ -464,6 +464,18 @@ impl MutationAck {
     }
 }
 
+/// Read-only raw manifest of a live cluster object, rendered as a YAML string.
+/// Server strips `metadata.managedFields` and the kubectl last-applied
+/// annotation before rendering. Served by `GET /api/manifest/:kind/:ns/:name`.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManifestResponse {
+    pub yaml: String,
+    pub kind: String,
+    pub name: String,
+    pub namespace: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Page<T> {

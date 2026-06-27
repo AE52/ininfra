@@ -26,6 +26,7 @@
 //!   GET    /api/builds/:job/:number
 //!   GET    /api/nodes
 //!   GET    /api/audit?cursor=&limit=
+//!   GET    /api/manifest/:kind/:ns/:name        (read-only raw YAML)
 
 use axum::{routing::get, Router};
 
@@ -44,6 +45,7 @@ mod search;
 mod events;
 mod hpa;
 mod logs;
+mod manifest;
 mod nodes;
 mod env;
 mod pods;
@@ -88,6 +90,7 @@ pub fn router(state: AppState) -> Router {
         .merge(favorites::routes())
         .merge(search::routes())
         .merge(gateway::routes())
+        .merge(manifest::routes())
         .route("/api/auth/me", get(auth::me))
         // Layer order (outermost → innermost on request, innermost → outermost on response):
         //   require_auth (outermost) → capture_errors → enforce_permissions (innermost)

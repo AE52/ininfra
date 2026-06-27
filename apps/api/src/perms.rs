@@ -175,6 +175,9 @@ pub fn resolve(method: &Method, path: &str) -> Option<&'static str> {
         // ── search ─────────────────────────────────────────────────────────
         ["api", "search", ..] => Some("services.read"),
 
+        // ── manifest (read-only raw YAML) ───────────────────────────────────
+        ["api", "manifest", ..] => Some("services.read"),
+
         // ── RBAC ───────────────────────────────────────────────────────────
         ["api", "rbac", ..] => Some("rbac.manage"),
 
