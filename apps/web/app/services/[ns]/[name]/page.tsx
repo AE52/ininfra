@@ -20,6 +20,7 @@ import { ScaleControls } from "@/components/ScaleControls";
 import { PodsTable } from "@/components/PodsTable";
 import { LogViewer } from "@/components/LogViewer";
 import { ManifestViewer } from "@/components/ManifestViewer";
+import { KubectlMenu } from "@/components/KubectlMenu";
 import { ErrorPanel } from "@/components/ErrorPanel";
 import { BranchControl } from "./BranchControl";
 import { BuildTriggerPanel } from "./BuildTriggerPanel";
@@ -141,6 +142,7 @@ export default async function ServiceDetailPage({
         actions={
           <div className="flex items-center gap-2">
             <ManifestViewer kind="deployment" ns={ns} name={name} />
+            <KubectlMenu target="deployment" ns={ns} name={name} />
             <Button asChild variant="outline" size="sm">
               <Link href={`/services/${ns}/${name}/deploy`}>Deploy →</Link>
             </Button>

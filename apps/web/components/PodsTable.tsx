@@ -7,6 +7,7 @@ import { api, ApiClientError } from "@/lib/api";
 import { cx, cpuToCores, fmtBytes, memToBytes, timeAgo } from "@/lib/format";
 import { PhaseBadge } from "@/components/StatusBadge";
 import { ManifestViewer } from "@/components/ManifestViewer";
+import { KubectlMenu } from "@/components/KubectlMenu";
 import { useToast } from "@/components/Toast";
 import { Card } from "@/components/ui/card";
 import {
@@ -118,6 +119,7 @@ export function PodsTable({
                   <TableCell className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-3">
                       <ManifestViewer kind="pod" ns={ns} name={p.name} compact />
+                      <KubectlMenu target="pod" ns={ns} name={p.name} compact />
                       <button
                         type="button"
                         onClick={() => del(p.name)}
