@@ -27,6 +27,7 @@ import type {
   DeployInfo,
   Deployment,
   DescribeResponse,
+  DriftResponse,
   EcrImage,
   EnvBundle,
   EnvPatch,
@@ -86,6 +87,9 @@ export type DescribeKind = "deployment" | "statefulset" | "pod";
 
 /** Kinds the read-only topology view (`GET /api/topology/...`) supports. */
 export type TopologyKind = "deployment" | "statefulset";
+
+/** Kinds the read-only drift view (`GET /api/drift/...`) supports. */
+export type DriftKind = "deployment" | "statefulset";
 
 export class ApiClientError extends Error {
   constructor(
@@ -300,6 +304,18 @@ export function createApiClient(options: ApiClientOptions = {}) {
         "GET",
         `/api/topology/${kind}/${ns}/${name}`,
       ),
+
+    /* ---- drift (read-only live spec vs last-applied) ---- */
+    /**
+     * Configuration-drift summary for one workload: compares the live object
+     * against its `kubectl.kubernetes.io/last-applied-configuration` annotation
+     * and reports a focused field-level diff (replicas, per-container image, and
+     * per-container cpu/mem requests+limits). When no last-applied baseline
+     * exists, `hasBaseline` is false and `fields` is empty. Supported `kind`:
+     * "deployment" | "statefulset".
+     */
+    drift: (kind: DriftKind, ns: Namespace, name: string) =>
+      request<DriftResponse>(cfg, "GET", `/api/drift/${kind}/${ns}/${name}`),
 
     /* ---- logs ---- */
     /** Snapshot of recent log lines (Loki-backed). For live streaming use streamLogsUrl(). */

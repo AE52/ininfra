@@ -36,6 +36,7 @@
 //!   GET    /api/manifest/:kind/:ns/:name        (read-only raw YAML)
 //!   GET    /api/describe/:kind/:ns/:name        (read-only events + status summary)
 //!   GET    /api/topology/:kind/:ns/:name        (read-only pod topology + PDB safety view)
+//!   GET    /api/drift/:kind/:ns/:name           (read-only live spec vs last-applied drift)
 //!   GET    /api/secrets/health?ns=              (read-only TLS cert expiry scan)
 
 use axum::{routing::get, Router};
@@ -50,6 +51,7 @@ mod capacity;
 mod deploy;
 mod deployments;
 mod describe;
+mod drift;
 mod errors;
 mod favorites;
 mod gateway;
@@ -113,6 +115,7 @@ pub fn router(state: AppState) -> Router {
         .merge(manifest::routes())
         .merge(describe::routes())
         .merge(topology::routes())
+        .merge(drift::routes())
         .route("/api/auth/me", get(auth::me))
         // Layer order (outermost → innermost on request, innermost → outermost on response):
         //   require_auth (outermost) → capture_errors → enforce_permissions (innermost)
