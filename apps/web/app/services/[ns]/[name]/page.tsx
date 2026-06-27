@@ -20,6 +20,7 @@ import { ScaleControls } from "@/components/ScaleControls";
 import { PodsTable } from "@/components/PodsTable";
 import { LogViewer } from "@/components/LogViewer";
 import { ManifestViewer } from "@/components/ManifestViewer";
+import { DescribePanel } from "@/components/DescribePanel";
 import { KubectlMenu } from "@/components/KubectlMenu";
 import { ErrorPanel } from "@/components/ErrorPanel";
 import { BranchControl } from "./BranchControl";
@@ -381,6 +382,12 @@ export default async function ServiceDetailPage({
               : undefined
           } />
         )}
+      </section>
+
+      {/* Events & Describe */}
+      <section>
+        <h2 className="label-kicker mb-3">Events &amp; describe</h2>
+        <DescribePanel kind="deployment" ns={ns} name={name} />
       </section>
 
       {/* Pods */}

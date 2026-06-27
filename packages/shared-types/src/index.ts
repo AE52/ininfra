@@ -910,6 +910,47 @@ export interface EventInfo {
 }
 
 /* ------------------------------------------------------------------ */
+/* Describe (per-object events + status summary)                      */
+/* ------------------------------------------------------------------ */
+
+/** One status condition off a live object (`status.conditions[*]`). */
+export interface DescribeCondition {
+  type: string;
+  status: string;
+  reason: string | null;
+  message: string | null;
+  lastTransition: Timestamp | null;
+}
+
+/**
+ * Per-container status (pods only). `state` is a short verb
+ * ("running" | "waiting" | "terminated" | "unknown"); `reason` carries the
+ * meaningful detail (e.g. "CrashLoopBackOff", "OOMKilled").
+ */
+export interface DescribeContainer {
+  name: string;
+  ready: boolean;
+  restartCount: number;
+  state: string;
+  reason: string | null;
+  message: string | null;
+}
+
+/**
+ * Read-only "describe"-style summary for one object plus its recent events.
+ * Served by `GET /api/describe/:kind/:ns/:name` (kind ∈ deployment | statefulset | pod).
+ */
+export interface DescribeResponse {
+  kind: string;
+  namespace: string;
+  name: string;
+  conditions: DescribeCondition[];
+  /** Populated for pods only; empty for deployments / statefulsets. */
+  containers: DescribeContainer[];
+  events: EventInfo[];
+}
+
+/* ------------------------------------------------------------------ */
 /* PersistentVolumeClaims                                             */
 /* ------------------------------------------------------------------ */
 
