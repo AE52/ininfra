@@ -55,6 +55,8 @@ const ACTION_VALUES: AuditAction[] = [
   "edit_rbac",
   "cordon_node",
   "reveal_secret",
+  "suspend_cronjob",
+  "trigger_job",
 ];
 
 const actionMeta: Record<AuditAction, { label: string; cls: string }> = {
@@ -78,6 +80,8 @@ const actionMeta: Record<AuditAction, { label: string; cls: string }> = {
   edit_rbac: { label: "edit rbac", cls: "text-violet-700 bg-violet-50" },
   cordon_node: { label: "cordon node", cls: "text-[#8a6d00] bg-pf-gold-50" },
   reveal_secret: { label: "reveal secret", cls: "text-pf-red bg-pf-red-50" },
+  suspend_cronjob: { label: "suspend cronjob", cls: "text-[#8a6d00] bg-pf-gold-50" },
+  trigger_job: { label: "trigger job", cls: "text-pf-blue bg-pf-blue-50" },
 };
 
 // ── Regex validation (client-side preview) ─────────────────────────────────

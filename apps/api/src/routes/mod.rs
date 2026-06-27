@@ -25,6 +25,10 @@
 //!   POST   /api/builds                           body BuildTrigger
 //!   GET    /api/builds/:job/:number
 //!   GET    /api/nodes
+//!   GET    /api/cronjobs?ns=
+//!   GET    /api/jobs?ns=
+//!   PATCH  /api/cronjobs/:ns/:name/suspend        body SuspendRequest
+//!   POST   /api/cronjobs/:ns/:name/trigger
 //!   GET    /api/audit?cursor=&limit=
 //!   GET    /api/manifest/:kind/:ns/:name        (read-only raw YAML)
 //!   GET    /api/describe/:kind/:ns/:name        (read-only events + status summary)
@@ -47,6 +51,7 @@ mod gateway;
 mod search;
 mod events;
 mod hpa;
+mod jobs;
 mod logs;
 mod manifest;
 mod nodes;
@@ -83,6 +88,7 @@ pub fn router(state: AppState) -> Router {
         .merge(audit::routes())
         .merge(build_config::routes())
         .merge(hpa::routes())
+        .merge(jobs::routes())
         .merge(statefulsets::routes())
         .merge(events::routes())
         .merge(pvc::routes())

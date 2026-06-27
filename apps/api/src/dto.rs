@@ -90,6 +90,8 @@ pub enum AuditAction {
     EditRbac,
     CordonNode,
     RevealSecret,
+    SuspendCronJob,
+    TriggerJob,
 }
 
 impl AuditAction {
@@ -116,6 +118,8 @@ impl AuditAction {
             AuditAction::EditRbac => "edit_rbac",
             AuditAction::CordonNode => "cordon_node",
             AuditAction::RevealSecret => "reveal_secret",
+            AuditAction::SuspendCronJob => "suspend_cronjob",
+            AuditAction::TriggerJob => "trigger_job",
         }
     }
 }
@@ -914,6 +918,69 @@ pub struct StatefulSetSummary {
     pub service_name: Option<String>,
     pub update_strategy: Option<String>,
     pub created_at: Timestamp,
+}
+
+/* ------------------------------------------------------------------ */
+/* Jobs & CronJobs (batch/v1)                                          */
+/* ------------------------------------------------------------------ */
+
+/// Summary of a `batch/v1` CronJob.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CronJobSummary {
+    pub namespace: String,
+    pub name: String,
+    /// Cron schedule expression, e.g. "*/5 * * * *".
+    pub schedule: String,
+    /// True when `spec.suspend` is set (the controller will not start new jobs).
+    pub suspended: bool,
+    pub last_schedule_time: Option<Timestamp>,
+    pub last_successful_time: Option<Timestamp>,
+    /// Number of currently active (running) Jobs owned by this CronJob.
+    pub active_count: i32,
+    /// Primary container image of the job template, when present.
+    pub image: Option<String>,
+}
+
+/// Summary of a `batch/v1` Job. `status` is a rollup verb derived from the
+/// Job's conditions/counts: "Complete" | "Failed" | "Running" | "Unknown".
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JobSummary {
+    pub namespace: String,
+    pub name: String,
+    /// Owning CronJob name, when this Job was created by a CronJob.
+    pub owner: Option<String>,
+    /// Desired completions (`spec.completions`); null when unset (run-once).
+    pub completions: Option<i32>,
+    pub succeeded: i32,
+    pub failed: i32,
+    pub active: i32,
+    pub start_time: Option<Timestamp>,
+    pub completion_time: Option<Timestamp>,
+    /// Wall-clock seconds from start to completion (completed jobs only).
+    pub duration_seconds: Option<i64>,
+    /// "Complete" | "Failed" | "Running" | "Unknown".
+    pub status: String,
+}
+
+/// PATCH body for suspending/resuming a CronJob. `true` suspends (the controller
+/// stops scheduling new Jobs), `false` resumes. One endpoint covers both.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SuspendRequest {
+    pub suspend: bool,
+}
+
+/// Response of `POST /api/cronjobs/:ns/:name/trigger` — the name of the Job that
+/// was created from the CronJob's job template.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TriggerJobAck {
+    pub ok: bool,
+    /// Name (`metadata.name`) of the newly created Job.
+    pub job_name: String,
+    pub audit_id: Option<String>,
 }
 
 /* ------------------------------------------------------------------ */

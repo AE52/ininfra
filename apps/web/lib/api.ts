@@ -22,6 +22,7 @@ import type {
   CertHealth,
   ClientErrorReport,
   CordonRequest,
+  CronJobSummary,
   DeployInfo,
   Deployment,
   DescribeResponse,
@@ -36,6 +37,7 @@ import type {
   GatewayError,
   GatewayLogEntry,
   GatewayRequest,
+  JobSummary,
   ManifestResponse,
   NewFavorite,
   SearchResult,
@@ -61,6 +63,7 @@ import type {
   SetupStatus,
   StatefulSetSummary,
   StatusSummary,
+  TriggerJobAck,
   UpdateUserRequest,
   User,
   WriteFileRequest,
@@ -482,6 +485,33 @@ export function createApiClient(options: ApiClientOptions = {}) {
         "POST",
         `/api/statefulsets/${ns}/${name}/restart`,
       ),
+
+    /* ---- jobs & cronjobs (batch/v1) ---- */
+    /** List CronJobs across the namespace (or all managed namespaces when omitted). */
+    listCronjobs: (
+      ns?: Namespace,
+      opts: { cursor?: string; limit?: number } = {},
+    ) =>
+      request<Page<CronJobSummary>>(
+        cfg,
+        "GET",
+        `/api/cronjobs${q({ ns, cursor: opts.cursor, limit: opts.limit })}`,
+      ),
+    /** List recent Jobs (newest-first, capped) across the ns (or all managed). */
+    listJobs: (ns?: Namespace, opts: { cursor?: string; limit?: number } = {}) =>
+      request<Page<JobSummary>>(
+        cfg,
+        "GET",
+        `/api/jobs${q({ ns, cursor: opts.cursor, limit: opts.limit })}`,
+      ),
+    /** Suspend (true) or resume (false) a CronJob. Audited. */
+    suspendCronjob: (ns: Namespace, name: string, suspend: boolean) =>
+      request<MutationAck>(cfg, "PATCH", `/api/cronjobs/${ns}/${name}/suspend`, {
+        suspend,
+      }),
+    /** Trigger a CronJob now: create a Job from its template. Returns the Job name. */
+    triggerCronjob: (ns: Namespace, name: string) =>
+      request<TriggerJobAck>(cfg, "POST", `/api/cronjobs/${ns}/${name}/trigger`),
 
     /* ---- events ---- */
     listEvents: (

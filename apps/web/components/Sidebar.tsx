@@ -39,6 +39,7 @@ function buildNav(t: ReturnType<typeof useT>): NavGroup[] {
       items: [
         { href: "/services", label: t.nav.services, match: (p) => p === "/services" || p.startsWith("/services/"), icon: "M3 7h18M3 12h18M3 17h18M7 4v3m10 10v3" },
         { href: "/stateful", label: t.nav.stateful, match: (p) => p.startsWith("/stateful"), icon: "M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3Zm0 0v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" },
+        { href: "/jobs", label: t.nav.jobs, match: (p) => p.startsWith("/jobs"), icon: "M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" },
         { href: "/hpa", label: t.nav.autoscaling, match: (p) => p.startsWith("/hpa"), icon: "M3 17l6-6 4 4 8-8m0 0h-5m5 0v5" },
         { href: "/gateway", label: t.nav.gateway, match: (p) => p.startsWith("/gateway"), feature: "gateway", icon: "M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18M3 12h18M4.6 7h14.8M4.6 17h14.8M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" },
       ],
