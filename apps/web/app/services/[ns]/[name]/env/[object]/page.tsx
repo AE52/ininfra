@@ -111,7 +111,18 @@ export default async function EnvObjectPage({
           </span>
         }
       />
-      <EnvObjectEditor ns={ns} workload={name} object={object} />
+      {/*
+        Remount the editor whenever the live object's resourceVersion changes
+        (e.g. after a save triggers router.refresh()). Its useState initializers
+        for `rows`/`resourceVersion` only run on mount, so without this key a
+        second consecutive save would keep submitting the stale rv and 409.
+      */}
+      <EnvObjectEditor
+        key={`${object.source}/${object.name}/${object.resourceVersion}`}
+        ns={ns}
+        workload={name}
+        object={object}
+      />
     </div>
   );
 }

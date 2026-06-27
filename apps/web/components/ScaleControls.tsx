@@ -33,6 +33,15 @@ export function ScaleControls({
   const sliderMax = Math.max(MAX, desired + 2);
 
   function apply() {
+    // Scaling to zero takes the workload fully offline — confirm first.
+    if (
+      target === 0 &&
+      !window.confirm(
+        `Scale ${name} to 0 replicas? This stops the workload entirely and it will serve no traffic until scaled back up.`,
+      )
+    ) {
+      return;
+    }
     startSaving(async () => {
       try {
         await api.scaleDeployment(ns, name, { replicas: target });
@@ -47,6 +56,13 @@ export function ScaleControls({
   }
 
   async function restart() {
+    if (
+      !window.confirm(
+        `Restart the rollout for ${name}? Pods are recreated one batch at a time; in-flight requests on terminating pods may be dropped.`,
+      )
+    ) {
+      return;
+    }
     setRestarting(true);
     try {
       await api.restartDeployment(ns, name);

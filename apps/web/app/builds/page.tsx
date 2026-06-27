@@ -8,6 +8,7 @@ import { BuildBadge } from "@/components/StatusBadge";
 import { BuildTriggerForm } from "@/components/BuildTriggerForm";
 import { ErrorPanel } from "@/components/ErrorPanel";
 import { CursorPager } from "@/components/Pager";
+import { JenkinsGate } from "@/components/JenkinsGate";
 import { Card } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,7 @@ export default async function BuildsPage({
   const repos = Array.from(new Set(builds.map((b) => b.job))).sort();
 
   return (
+    <JenkinsGate kicker="Continuous delivery" title="Builds">
     <div className="animate-fade-in">
       <PageHeader
         kicker="Continuous delivery"
@@ -71,6 +73,7 @@ export default async function BuildsPage({
         </div>
       </div>
     </div>
+    </JenkinsGate>
   );
 }
 

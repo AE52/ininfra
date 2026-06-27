@@ -10,7 +10,12 @@ import { cx } from "@/lib/format";
 import { KIND_ICON, KIND_LABEL, KIND_ORDER, statusTone } from "@/lib/search-kind";
 import { onOpenPalette } from "@/lib/palette";
 import { FavoriteStar } from "@/components/FavoriteStar";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 const DEBOUNCE_MS = 200;
@@ -128,6 +133,12 @@ export function CommandPalette() {
         className="top-[12%] max-w-xl translate-y-0 gap-0 overflow-hidden p-0 [&>button]:hidden"
         onKeyDown={onKeyDown}
       >
+        {/* Radix requires a labelled dialog; keep it visually hidden. */}
+        <DialogTitle className="sr-only">Search</DialogTitle>
+        <DialogDescription className="sr-only">
+          Search deployments, pods, services, and nodes across the cluster.
+        </DialogDescription>
+
         {/* Search input row. */}
         <div className="flex items-center gap-2.5 border-b border-line px-4">
           <Search className="h-4 w-4 shrink-0 text-ink-faint" />
