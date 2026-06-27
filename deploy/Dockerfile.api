@@ -1,0 +1,49 @@
+# syntax=docker/dockerfile:1
+# Multi-stage build for the DevOps Console API.
+# Stage 1 builds a fully static musl binary (rustls everywhere — no OpenSSL),
+# stage 2 ships it on distroless/static for a minimal, rootless runtime image.
+#
+# Build context = repo root (devops-console/):
+#   docker build -f deploy/Dockerfile.api -t ininfra-api .
+#
+# NOTE: the build stage runs on the *target* platform (no $BUILDPLATFORM pin).
+# Some deps (ring) compile C, so the musl C toolchain must match the target
+# arch — on an arm64 host cross-compiling to x86_64-musl, `musl-gcc` would be
+# aarch64 and reject `-m64`. Building as the target platform (emulated when the
+# host differs) keeps the toolchain consistent.
+FROM rust:1.94-slim AS build
+WORKDIR /build
+
+# musl toolchain for a static link. cmake/perl/g++ are needed to build
+# aws-lc-sys (rustls' crypto backend pulled in by the AWS SDK).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        musl-tools pkg-config ca-certificates cmake perl make g++ \
+    && rm -rf /var/lib/apt/lists/* \
+    && rustup target add x86_64-unknown-linux-musl
+
+ENV CARGO_TERM_COLOR=never
+
+# --- dependency cache layer: manifest + migrations + stub main ---
+# `sqlx::migrate!` embeds db/migrations at compile time, so they must be present.
+COPY apps/api/Cargo.toml apps/api/Cargo.toml
+COPY db db
+WORKDIR /build/apps/api
+RUN mkdir -p src \
+    && echo "fn main() {}" > src/main.rs \
+    && cargo build --release --target x86_64-unknown-linux-musl || true
+
+# --- real sources ---
+COPY apps/api/src ./src
+RUN touch src/main.rs \
+    && cargo build --release --target x86_64-unknown-linux-musl \
+    && cp target/x86_64-unknown-linux-musl/release/ininfra-api /ininfra-api
+
+# ---- runtime: distroless static (nonroot) ----
+# distroless/static carries ca-certificates and /etc/passwd for uid 65532
+# (nonroot); the static musl binary needs nothing else.
+FROM gcr.io/distroless/static-debian12:nonroot AS runtime
+COPY --from=build /ininfra-api /usr/local/bin/ininfra-api
+USER nonroot:nonroot
+EXPOSE 8080
+ENV BIND_ADDR=0.0.0.0:8080
+ENTRYPOINT ["/usr/local/bin/ininfra-api"]

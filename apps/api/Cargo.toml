@@ -1,0 +1,87 @@
+[package]
+name = "ininfra-api"
+version = "0.1.0"
+edition = "2021"
+description = "inInfra Console API — axum + kube-rs + sqlx"
+license = "Apache-2.0"
+publish = false
+
+[[bin]]
+name = "ininfra-api"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.40", features = ["full"] }
+
+# HTTP framework
+axum = { version = "0.7", features = ["macros"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+
+# Kubernetes
+# `ws` enables pod exec (used by the PVC file browser to ls/cat/write/rm
+# inside a pod that mounts the volume).
+kube = { version = "0.95", features = ["client", "runtime", "derive", "ws"] }
+k8s-openapi = { version = "0.23", features = ["v1_30"] }
+
+# Database
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio",
+    "tls-rustls",
+    "postgres",
+    "macros",
+    "chrono",
+    "uuid",
+    "json",
+    "migrate",
+] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Time & ids
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+
+# Errors & logging
+thiserror = "1"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Config / env
+dotenvy = "0.15"
+
+# HTTP client (Jenkins)
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Futures helpers (log streaming)
+futures = "0.3"
+
+# Regex validation for Loki LogQL regex line-filter (`|~ "..."`)
+regex = { version = "1", default-features = false, features = ["std"] }
+
+# Secret value (de)coding for the env editor
+base64 = "0.22"
+
+# Authentication: argon2id password hashing + HS256 session JWTs.
+argon2 = { version = "0.5", features = ["std"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+jsonwebtoken = "9"
+
+# AWS ECR (image inventory / delete / digest→commit resolution). rustls (ring)
+# to stay OpenSSL-free for the static musl build; creds from env (k8s secret).
+# rt-tokio provides the default async sleep/timer the SDK needs at runtime
+# (without it, config load panics: "An async sleep implementation is required").
+aws-config = { version = "1", default-features = false, features = ["behavior-version-latest", "rustls", "rt-tokio"] }
+aws-sdk-ecr = { version = "1", default-features = false, features = ["behavior-version-latest", "rustls", "rt-tokio"] }
+# Both `ring` (reqwest/sqlx) and `aws-lc-rs` (AWS SDK) end up in the tree, so
+# rustls can't auto-pick a process-wide CryptoProvider — we install one in main.
+rustls = { version = "0.23", features = ["aws_lc_rs"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true

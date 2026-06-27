@@ -1,0 +1,142 @@
+# TEMPLATE — inInfra Console API (Rust/axum). Uses the ininfra-api
+# ServiceAccount for in-cluster kube access.
+#
+# REPLACE:
+#   - the container image (see `# REPLACE: your image registry`)
+#   - MANAGED_NAMESPACES / CICD_NAMESPACE / CLUSTER_NAME / PRODUCT_NAME to match
+#     your environment
+#   - the backing Secrets (ininfra-api-db, ininfra-auth, ininfra-aws) — create
+#     them out of band with your own values.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ininfra-api
+  namespace: ininfra
+  labels:
+    app: ininfra-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ininfra-api
+  template:
+    metadata:
+      labels:
+        app: ininfra-api
+    spec:
+      serviceAccountName: ininfra-api
+      containers:
+        - name: api
+          # REPLACE: your image registry
+          image: your-registry.example.com/ininfra-api:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: BIND_ADDR
+              value: "0.0.0.0:8080"
+            # REPLACE: in-cluster URL of your Jenkins (or other CI) service.
+            - name: JENKINS_BASE_URL
+              value: "http://jenkins.default.svc:8080"
+            # Comma-separated list of namespaces the console manages. A
+            # RoleBinding for ininfra-api-ns must exist in EACH of these (see
+            # 10-rbac.yaml).
+            - name: MANAGED_NAMESPACES
+              value: "default"
+            # Namespace that hosts your CI/CD tooling (e.g. Jenkins). Also needs
+            # a RoleBinding for ininfra-api-ns.
+            - name: CICD_NAMESPACE
+              value: "default"
+            - name: CLUSTER_NAME
+              value: "my-cluster"
+            - name: PRODUCT_NAME
+              value: "inInfra"
+            # ConfigMap that holds the build catalog (job definitions).
+            - name: BUILD_CATALOG_CONFIGMAP
+              value: "ininfra-build-catalog"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ininfra-api-db
+                  key: DATABASE_URL
+            # Auth: session signing key + bootstrap admin (from ininfra-auth Secret).
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ininfra-auth
+                  key: SESSION_SECRET
+            - name: ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: ininfra-auth
+                  key: ADMIN_USERNAME
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ininfra-auth
+                  key: ADMIN_PASSWORD
+            # AWS creds — optional: enables ECR features (image inventory /
+            # delete / commit resolution). When the ininfra-aws Secret is absent
+            # the API disables ECR features.
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ininfra-aws
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ininfra-aws
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: ininfra-aws
+                  key: AWS_REGION
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+---
+# DATABASE_URL composed from the postgres Secret. Create alongside, or generate
+# via CI. Host = postgres.ininfra.svc.
+# REPLACE: the password must match POSTGRES_PASSWORD in 20-postgres.yaml.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ininfra-api-db
+  namespace: ininfra
+type: Opaque
+stringData:
+  DATABASE_URL: "postgres://devops:CHANGEME-postgres-password@postgres.ininfra.svc:5432/devops_console"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ininfra-api
+  namespace: ininfra
+  labels:
+    app: ininfra-api
+spec:
+  selector:
+    app: ininfra-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

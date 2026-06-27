@@ -1,0 +1,81 @@
+name: ci
+
+# Continuous integration for inInfra. Runs the same gate contributors run
+# locally (see CONTRIBUTING.md): the web/shared-types lint+typecheck+build and
+# the Rust fmt+clippy+build. This workflow is intentionally infrastructure-free
+# — it does not touch any registry, cloud account, or cluster. Deployment lives
+# in a separate workflow (.github/workflows/deploy.yml).
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    name: web (lint / typecheck / build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # corepack ships with the Node setup below and activates the pnpm version
+      # pinned in package.json (`packageManager`). Install pnpm before the Node
+      # step so its cache can key on the lockfile.
+      - name: Enable pnpm via corepack
+        run: corepack enable
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+  api:
+    name: api (fmt / clippy / build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      # Caches ~/.cargo and apps/api/target keyed on the Cargo lockfile.
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/api
+
+      - name: Format check
+        run: cargo fmt --manifest-path apps/api/Cargo.toml --check
+
+      # NOTE: clippy is run with `-D warnings`, i.e. any warning fails the job.
+      # If the existing code base still has clippy warnings, this step may fail
+      # and need a follow-up cleanup PR (or a temporary relaxation) before the
+      # gate is fully green.
+      - name: Clippy
+        run: cargo clippy --manifest-path apps/api/Cargo.toml -- -D warnings
+
+      - name: Build
+        run: cargo build --manifest-path apps/api/Cargo.toml

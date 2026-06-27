@@ -1,0 +1,64 @@
+# TEMPLATE — inInfra Console web (Next.js standalone). Talks to the API
+# in-cluster via API_INTERNAL_URL; browser /api/* calls are proxied by the Next
+# rewrite.
+#
+# REPLACE: the container image (see `# REPLACE: your image registry`).
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ininfra-web
+  namespace: ininfra
+  labels:
+    app: ininfra-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ininfra-web
+  template:
+    metadata:
+      labels:
+        app: ininfra-web
+    spec:
+      containers:
+        - name: web
+          # REPLACE: your image registry
+          image: your-registry.example.com/ininfra-web:latest
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: PORT
+              value: "3000"
+            - name: API_INTERNAL_URL
+              value: "http://ininfra-api.ininfra.svc:8080"
+          readinessProbe:
+            httpGet:
+              # /login is public (no auth redirect) and always 200.
+              path: /login
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: "500m"
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ininfra-web
+  namespace: ininfra
+  labels:
+    app: ininfra-web
+spec:
+  selector:
+    app: ininfra-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000

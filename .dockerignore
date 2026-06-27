@@ -1,0 +1,15 @@
+# Keep the build context lean and deterministic. Dependencies are installed
+# fresh inside the image (pnpm for web, cargo for api), so local artifacts must
+# never leak in and clobber the in-image, target-platform installs.
+**/node_modules
+**/.next
+**/.turbo
+apps/api/target
+**/target
+.git
+.gitignore
+**/*.log
+**/.DS_Store
+**/.env
+**/.env.*
+*.md

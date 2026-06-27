@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    border-color: theme("colors.hairline");
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: theme("colors.base");
+    color: theme("colors.ink");
+    font-family: theme("fontFamily.sans");
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: rgba(124, 92, 255, 0.32);
+    color: #fff;
+  }
+
+  /* Visible keyboard focus: gradient ring */
+  :focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px theme("colors.base"),
+      0 0 0 4px theme("colors.brand.blue");
+    border-radius: 8px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer components {
+  .text-gradient {
+    background-image: theme("backgroundImage.brand");
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Subtle dot-grid background */
+  .dot-grid {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(154, 167, 184, 0.09) 1px,
+      transparent 0
+    );
+    background-size: 28px 28px;
+  }
+
+  .hairline-x {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      theme("colors.hairline"),
+      transparent
+    );
+  }
+
+  .gradient-border {
+    position: relative;
+  }
+  .gradient-border::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: theme("backgroundImage.brand");
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .gradient-border:hover::after {
+    opacity: 1;
+  }
+}
+
+/* Fluid type scale */
+.fluid-display {
+  font-size: clamp(2.5rem, 1.6rem + 4.4vw, 5.25rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+.fluid-h2 {
+  font-size: clamp(1.75rem, 1.2rem + 2.2vw, 3rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+.fluid-deck {
+  font-size: clamp(1.05rem, 0.95rem + 0.6vw, 1.35rem);
+  line-height: 1.55;
+}

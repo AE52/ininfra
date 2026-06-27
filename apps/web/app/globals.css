@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* shadcn semantic tokens, themed to the OpenShift / PatternFly palette
+   (light content surface; the masthead + nav stay custom-dark). */
+@layer base {
+  :root {
+    --background: 0 0% 94.1%; /* #f0f0f0 */
+    --foreground: 0 0% 8.2%; /* #151515 */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8.2%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8.2%;
+    --primary: 210 100% 40%; /* #0066cc PatternFly blue */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 13%;
+    --muted: 0 0% 92.5%;
+    --muted-foreground: 210 4% 43%; /* #6a6e73 */
+    --accent: 208 60% 94%; /* pf-blue-50 */
+    --accent-foreground: 210 100% 40%;
+    --destructive: 5 90% 41%; /* #c9190b */
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 82.4%; /* #d2d2d2 */
+    --input: 0 0% 82.4%;
+    --ring: 210 100% 40%;
+    --radius: 0.1875rem; /* 3px, PatternFly */
+  }
+  * {
+    @apply border-border;
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+@layer base {
+  body {
+    background-color: #f0f0f0;
+    color: #151515;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Tabular numerals keep metrics column-aligned. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: #bee1f4;
+  }
+}
+
+@layer components {
+  .hairline {
+    @apply border-line;
+  }
+
+  /* Small uppercase section/eyebrow label. */
+  .label-kicker {
+    @apply text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-muted;
+  }
+}
+
+/* Terminal / log scroll surface (used on dark log wells). */
+.logwell {
+  scrollbar-color: #6a6e73 transparent;
+}
+.logwell::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.logwell::-webkit-scrollbar-thumb {
+  background: #6a6e73;
+  border-radius: 6px;
+}

@@ -1,0 +1,90 @@
+# TEMPLATE — Postgres for the inInfra audit log + saved config.
+# Single-replica StatefulSet. Credentials come from the ininfra-postgres Secret.
+#
+# REPLACE: POSTGRES_PASSWORD below (the value here is a placeholder — DO NOT
+# ship it to production). Prefer managing this Secret via sealed-secrets /
+# external-secrets instead of committing it. Also adjust storageClassName to
+# one your cluster provides (the example uses the AWS EBS `gp3` class).
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ininfra-postgres
+  namespace: ininfra
+type: Opaque
+stringData:
+  POSTGRES_DB: devops_console
+  POSTGRES_USER: devops
+  # REPLACE: set a strong password before applying.
+  POSTGRES_PASSWORD: "CHANGEME-postgres-password"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: ininfra
+  labels:
+    app: ininfra-postgres
+spec:
+  clusterIP: None
+  selector:
+    app: ininfra-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: ininfra
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ininfra-postgres
+  template:
+    metadata:
+      labels:
+        app: ininfra-postgres
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          envFrom:
+            - secretRef:
+                name: ininfra-postgres
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "devops", "-d", "devops_console"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: gp3 # REPLACE: a storage class your cluster provides
+        resources:
+          requests:
+            storage: 10Gi

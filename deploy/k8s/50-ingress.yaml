@@ -1,0 +1,57 @@
+# TEMPLATE — Ingress exposing the inInfra Console.
+#
+# Routing: /api and /healthz -> ininfra-api ; everything else -> ininfra-web.
+# (The web also proxies /api via Next rewrite, but routing /api straight to the
+#  API at the ingress avoids a hop for direct API consumers.)
+#
+# REPLACE:
+#   - the host `ininfra.example.com` with your hostname
+#   - the TLS certificate reference
+#   - this example uses the AWS Load Balancer Controller (ALB). For other
+#     ingress controllers (nginx, traefik, ...), set `ingressClassName` and
+#     replace the `alb.ingress.kubernetes.io/*` annotations with the equivalents
+#     your controller understands (and drop the ones that don't apply).
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ininfra-console
+  namespace: ininfra
+  annotations:
+    # --- AWS ALB example; adjust ingressClassName/annotations for your ingress controller ---
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: ininfra-shared # REPLACE: your ALB group name (or remove if not sharing an ALB)
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    # REPLACE: your TLS certificate ARN (ACM) — or use cert-manager / your
+    # controller's TLS mechanism instead.
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:REGION:ACCOUNT_ID:certificate/REPLACE-ME"
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+spec:
+  rules:
+    - host: ininfra.example.com # REPLACE: your hostname
+      http:
+        paths:
+          - path: /healthz
+            pathType: Prefix
+            backend:
+              service:
+                name: ininfra-api
+                port:
+                  number: 8080
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: ininfra-api
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ininfra-web
+                port:
+                  number: 80

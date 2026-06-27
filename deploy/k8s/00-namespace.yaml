@@ -1,0 +1,9 @@
+# TEMPLATE — inInfra install namespace.
+# REPLACE: change the namespace name `ininfra` here (and everywhere else in
+# deploy/k8s/*.yaml) if you want to install under a different namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ininfra
+  labels:
+    app.kubernetes.io/part-of: ininfra-console

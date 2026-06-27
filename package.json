@@ -1,0 +1,25 @@
+{
+  "name": "ininfra",
+  "version": "0.1.0",
+  "private": true,
+  "description": "inInfra — a self-hostable, OpenShift-style web console for operating any Kubernetes cluster",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "dev:web": "pnpm --filter @ininfra/web dev",
+    "build:web": "pnpm --filter @ininfra/web build",
+    "dev:api": "cargo run --manifest-path apps/api/Cargo.toml",
+    "build:api": "cargo build --release --manifest-path apps/api/Cargo.toml",
+    "migrate": "sqlx migrate run --source db/migrations"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.0",
+    "typescript": "^5.6.0"
+  }
+}

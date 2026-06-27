@@ -1,0 +1,86 @@
+name: build-and-deploy
+
+# -----------------------------------------------------------------------------
+# EXAMPLE deploy workflow — adapt this to your own infrastructure.
+#
+# This is a self-host reference pipeline: it builds the api + web container
+# images, pushes them to a registry, and rolls them out to a Kubernetes
+# cluster. It ships with NO hardcoded accounts, clusters, regions, or roles —
+# every environment-specific value is read from GitHub repository
+# Variables (`vars.*`) and Secrets (`secrets.*`) so it is safe to fork.
+#
+# It triggers on `workflow_dispatch` ONLY, so it never runs automatically in a
+# fork or on push. Once you have configured the variables/secrets below, change
+# the trigger (e.g. add `push: { branches: [main] }`) to enable auto-deploys.
+#
+# Required repository Variables (Settings -> Secrets and variables -> Actions):
+#   REGISTRY      container registry host/prefix, e.g. <acct>.dkr.ecr.<region>.amazonaws.com
+#   CLUSTER_NAME  target Kubernetes / EKS cluster name
+#   NAMESPACE     namespace the console is deployed into
+#   AWS_REGION    region for the registry / cluster (if on AWS)
+#
+# Required repository Secrets:
+#   AWS_ROLE_ARN  IAM role ARN to assume via OIDC (for AWS ECR/EKS)
+# -----------------------------------------------------------------------------
+on:
+  workflow_dispatch:
+
+# Serialize deploys so two runs can't race the rollout.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # OIDC -> assume the cloud role
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  CLUSTER: ${{ vars.CLUSTER_NAME }}
+  NAMESPACE: ${{ vars.NAMESPACE }}
+  REGISTRY: ${{ vars.REGISTRY }}
+  ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Compute image tag
+        id: tag
+        run: echo "tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push web image
+        run: |
+          IMG="$REGISTRY/ininfra-web"
+          docker build -f deploy/Dockerfile.web \
+            -t "$IMG:${{ steps.tag.outputs.tag }}" -t "$IMG:latest" .
+          docker push "$IMG:${{ steps.tag.outputs.tag }}"
+          docker push "$IMG:latest"
+
+      - name: Build & push api image
+        run: |
+          IMG="$REGISTRY/ininfra-api"
+          docker build -f deploy/Dockerfile.api \
+            -t "$IMG:${{ steps.tag.outputs.tag }}" -t "$IMG:latest" .
+          docker push "$IMG:${{ steps.tag.outputs.tag }}"
+          docker push "$IMG:latest"
+
+      - name: Deploy to Kubernetes
+        run: |
+          aws eks update-kubeconfig --name "$CLUSTER" --region "$AWS_REGION"
+          TAG="${{ steps.tag.outputs.tag }}"
+          kubectl -n "$NAMESPACE" set image deployment/devops-web web="$REGISTRY/ininfra-web:$TAG"
+          kubectl -n "$NAMESPACE" set image deployment/devops-api api="$REGISTRY/ininfra-api:$TAG"
+          kubectl -n "$NAMESPACE" rollout status deployment/devops-web --timeout=300s
+          kubectl -n "$NAMESPACE" rollout status deployment/devops-api --timeout=300s

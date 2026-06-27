@@ -1,0 +1,128 @@
+# TEMPLATE — ServiceAccount + RBAC for the inInfra API.
+#
+# Grants the API the ability to read and patch deployments / configmaps /
+# secrets / pods / pod-logs / nodes / HPAs across the namespaces it manages.
+# Nodes are cluster-scoped so they need a ClusterRole + ClusterRoleBinding; the
+# namespaced verbs are granted per managed namespace via RoleBindings below.
+#
+# REPLACE: this file ships ONE example RoleBinding (in namespace `default`). You
+# must create one RoleBinding per namespace you list in MANAGED_NAMESPACES (and
+# CICD_NAMESPACE) — see the comment block near the bottom.
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ininfra-api
+  namespace: ininfra
+---
+# Namespaced permissions, bound into each managed namespace by the RoleBindings
+# below. Verb set: get/list/watch/patch on the console-managed resource kinds,
+# plus the extra verbs the mutating handlers need (pod delete for restart,
+# scale subresource for scale).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ininfra-api-ns
+rules:
+  # core: configmaps, secrets, pods, services
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets", "pods", "services"]
+    verbs: ["get", "list", "watch", "patch"]
+  # pod logs (stream + snapshot)
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get", "list", "watch"]
+  # restart = delete the pod (let the ReplicaSet recreate it)
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["delete"]
+  # pod exec — the PVC file browser runs ls/cat/write/rm inside the pod that
+  # mounts the claim. kube-rs uses a WebSocket (HTTP GET + Upgrade) exec, which
+  # the apiserver authorizes as "get" on pods/exec; SPDY clients use "create".
+  # Grant both so WS exec works.
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["get", "create"]
+  # apps: deployments (+ replicasets for rollout introspection)
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch", "patch"]
+  # scale subresource for the /scale endpoint
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["get", "patch"]
+  # autoscaling: HorizontalPodAutoscalers
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch", "patch"]
+  # networking: ingresses (services view shows exposure / hosts)
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch", "patch"]
+  # events for the resource detail / troubleshooting views
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+  # statefulsets (stateful workloads view) + their scale subresource
+  - apiGroups: ["apps"]
+    resources: ["statefulsets"]
+    verbs: ["get", "list", "watch", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets/scale"]
+    verbs: ["get", "patch"]
+  # persistentvolumeclaims (storage inventory view, read-only)
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+---
+# Cluster-scoped reads: nodes (not namespaced), metrics, and a cluster-wide
+# read of pods/namespaces so the nodes view can map pods→nodes across the
+# whole cluster and the console can enumerate namespaces. Read-only; all
+# mutating verbs stay scoped to the managed namespaces above.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ininfra-api-nodes
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ininfra-api-nodes
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ininfra-api-nodes
+subjects:
+  - kind: ServiceAccount
+    name: ininfra-api
+    namespace: ininfra
+---
+# ===========================================================================
+# Create one RoleBinding like this in EACH namespace listed in
+# MANAGED_NAMESPACES (and CICD_NAMESPACE). Bind the ClusterRole ininfra-api-ns
+# into each. The example below targets namespace `default` — copy it, change
+# `metadata.namespace` to each managed namespace, and apply.
+# ===========================================================================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ininfra-api
+  namespace: default # REPLACE: one per managed namespace (see comment above)
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ininfra-api-ns
+subjects:
+  - kind: ServiceAccount
+    name: ininfra-api
+    namespace: ininfra

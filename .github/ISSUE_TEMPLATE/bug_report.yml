@@ -1,0 +1,99 @@
+name: Bug report
+description: Report something in inInfra that is broken or behaves incorrectly.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill in as much as you
+        can — the version, your Kubernetes details, and reproduction steps make
+        triage dramatically faster.
+
+        **Do not report security vulnerabilities here.** See
+        [SECURITY.md](../blob/master/SECURITY.md) and use a private advisory.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: This is not a security vulnerability (those go through a private advisory).
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: inInfra version / commit
+      description: Release tag (e.g. v0.1.0) or the commit SHA you are running. Shown in the UI footer or `git rev-parse HEAD`.
+      placeholder: "v0.1.0 / 1a2b3c4"
+    validations:
+      required: true
+
+  - type: input
+    id: k8s-version
+    attributes:
+      label: Kubernetes version + distro
+      description: Output of `kubectl version --short` plus the distribution (EKS, GKE, AKS, OpenShift/OKD, k3s, kind, minikube, …).
+      placeholder: "v1.30.2 — EKS"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment-mode
+    attributes:
+      label: Deployment mode
+      description: How is the console connecting to the cluster?
+      options:
+        - In-cluster (ServiceAccount)
+        - Local (kube context, pnpm dev)
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact, numbered steps. Include the page/feature (Workloads, Env, Logs, PVC browser, Builds, Nodes, Status, Users, …) and any relevant config (e.g. MANAGED_NAMESPACES, Jenkins/ECR enabled).
+      placeholder: |
+        1. Go to Workloads in namespace `web`
+        2. Click Scale on deployment `frontend`
+        3. Set replicas to 3 and confirm
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: The deployment scales to 3 replicas and the audit log records the change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: A 500 error toast appears and the replica count does not change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / errors
+      description: API logs (`apps/api`), browser console errors, and the error-feed entry if any. Redact secrets and tokens.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else — screenshots, RBAC setup, reverse proxy / TLS termination, etc.
+    validations:
+      required: false

@@ -1,0 +1,83 @@
+name: Feature request
+description: Suggest a new capability or improvement for inInfra.
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! inInfra aims to be a thin, generic operations
+        console — please describe the operator workflow you want to support, not
+        just an implementation.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched existing issues and discussions and this is not a duplicate.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do, and where does inInfra fall short today?
+      placeholder: When operating namespace X, I have to drop to kubectl because the console can't …
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should the console do? Mention the affected area (Workloads, Env, Logs, PVC browser, Builds, Nodes, Status, Users, RBAC, …).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Primary area
+      options:
+        - Workloads (deployments / statefulsets)
+        - Environment editing (ConfigMaps / Secrets)
+        - Pods & logs
+        - Storage / PVC file browser
+        - Builds & deploys (Jenkins / ECR)
+        - Autoscaling (HPA)
+        - Nodes
+        - Services & ingresses
+        - Users & roles / RBAC
+        - Audit log
+        - Error feed
+        - Status page
+        - Configuration / deployment
+        - Other
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches, workarounds, or why existing features don't cover this.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contract-awareness
+    attributes:
+      label: Contract impact
+      description: New or changed API endpoints touch three artifacts that must stay in lock-step.
+      options:
+        - label: I understand this may require coordinated changes to packages/shared-types, apps/web/lib/api.ts, and apps/api/src/routes/mod.rs.
+          required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+    validations:
+      required: false
