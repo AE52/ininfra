@@ -25,6 +25,11 @@ use crate::k8s::{managed_namespaces, require_namespace};
 use crate::auth::Identity;
 use crate::AppState;
 
+/// Upper bound on a single scale request — guards against a fat-finger or
+/// malicious request scheduling thousands of pods. The negative check below
+/// covers the lower bound.
+const MAX_REPLICAS: i32 = 1000;
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/api/deployments", get(list_deployments))
@@ -85,8 +90,10 @@ async fn scale_deployment(
     Json(body): Json<ScaleRequest>,
 ) -> ApiResult<Json<MutationAck>> {
     require_namespace(&ns)?;
-    if body.replicas < 0 {
-        return Err(ApiError::BadRequest("replicas must be >= 0".into()));
+    if body.replicas < 0 || body.replicas > MAX_REPLICAS {
+        return Err(ApiError::BadRequest(format!(
+            "replicas must be between 0 and {MAX_REPLICAS}"
+        )));
     }
 
     let api: Api<K8sDeployment> = Api::namespaced(st.kube.clone(), &ns);
