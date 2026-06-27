@@ -62,7 +62,15 @@ impl Argo {
     /// `workflowTemplateRef`, so we list all Workflows in the CI/CD namespace and
     /// keep those whose `spec.workflowTemplateRef.name` is our template.
     pub async fn list(&self, limit: usize) -> ApiResult<Vec<BuildJob>> {
-        let list = self.api.list(&ListParams::default()).await.map_err(ApiError::from)?;
+        let list = match self.api.list(&ListParams::default()).await {
+            Ok(l) => l,
+            // Argo Workflows is an OPTIONAL integration. When its CRD/API group
+            // isn't installed in the cluster, kube returns 404 ("page not
+            // found") — treat that as "no builds / CI/CD not configured" and
+            // return an empty history rather than surfacing a 404/502 error.
+            Err(kube::Error::Api(ae)) if ae.code == 404 => return Ok(Vec::new()),
+            Err(e) => return Err(ApiError::from(e)),
+        };
         let mut out: Vec<BuildJob> = list
             .items
             .iter()
