@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CordonControl } from "./CordonControl";
 
 export const dynamic = "force-dynamic";
 
@@ -116,12 +117,15 @@ export default async function NodeDetailPage({
         title={nodeName}
         subtitle="Node capacity, live load, and the pods scheduled on it."
         actions={
-          <Link
-            href="/nodes"
-            className="text-xs text-ink-faint hover:text-ink-soft"
-          >
-            ← All nodes
-          </Link>
+          <div className="flex items-center gap-3">
+            <CordonControl name={nodeName} unschedulable={n.unschedulable} />
+            <Link
+              href="/nodes"
+              className="text-xs text-ink-faint hover:text-ink-soft"
+            >
+              ← All nodes
+            </Link>
+          </div>
         }
       />
 
@@ -144,6 +148,7 @@ export default async function NodeDetailPage({
             <h2 className="text-sm font-medium text-ink">Identity</h2>
             <div className="flex flex-wrap items-center justify-end gap-1.5">
               <CapacityBadge type={n.capacityType} />
+              <SchedulableBadge unschedulable={n.unschedulable} />
               <Badge
                 variant="outline"
                 className={
@@ -402,6 +407,23 @@ function CapacityBadge({ type }: { type: CapacityType }) {
     >
       <Dot className={m.dot} />
       {m.label}
+    </Badge>
+  );
+}
+
+/** Schedulable vs Cordoned, driven by `spec.unschedulable`. */
+function SchedulableBadge({ unschedulable }: { unschedulable: boolean }) {
+  return (
+    <Badge
+      variant="outline"
+      className={
+        unschedulable
+          ? "gap-1.5 border-pf-gold/30 bg-pf-gold-50 text-[#8a6d00]"
+          : "gap-1.5 border-pf-green/30 bg-pf-green-50 text-pf-green"
+      }
+    >
+      <Dot className={unschedulable ? "bg-[#8a6d00]" : "bg-pf-green"} />
+      {unschedulable ? "Cordoned" : "Schedulable"}
     </Badge>
   );
 }

@@ -93,7 +93,8 @@ export type AuditAction =
   | "delete_file"
   | "delete_image"
   | "edit_gateway"
-  | "edit_rbac";
+  | "edit_rbac"
+  | "cordon_node";
 
 /** Console access role. */
 export type Role = "developer" | "admin" | "super_admin";
@@ -380,6 +381,9 @@ export interface NodeInfo {
   spot: boolean;
   /** Provisioning capacity type derived from labels/taints. */
   capacityType: CapacityType;
+  /** True when the node is cordoned (`spec.unschedulable`): the scheduler will
+   *  not place new pods on it. Toggled via the cordon endpoint (admin only). */
+  unschedulable: boolean;
 }
 
 /** One node status condition (mirrors k8s NodeCondition). */
@@ -454,6 +458,14 @@ export interface AuditEntry {
 /** PATCH body to scale a deployment. */
 export interface ScaleRequest {
   replicas: number;
+}
+
+/**
+ * POST body to cordon/uncordon a node (admin only). `true` cordons (marks the
+ * node unschedulable), `false` uncordons. One endpoint covers both directions.
+ */
+export interface CordonRequest {
+  unschedulable: boolean;
 }
 
 /** Generic accepted/queued ack returned by mutating endpoints. */

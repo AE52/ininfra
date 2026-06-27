@@ -223,6 +223,15 @@ pub fn node_qty(
         .unwrap_or_default()
 }
 
+/// True when the node is cordoned (`spec.unschedulable`). Defaults to false when
+/// the field is absent.
+pub fn node_unschedulable(n: &K8sNode) -> bool {
+    n.spec
+        .as_ref()
+        .and_then(|s| s.unschedulable)
+        .unwrap_or(false)
+}
+
 pub fn node_ready(n: &K8sNode) -> bool {
     n.status
         .as_ref()

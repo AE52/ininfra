@@ -63,6 +63,7 @@ pub static PERMS: &[Perm] = &[
     Perm { key: "gateway.edit",          category: "infrastructure", label: "Edit gateway config",    mutating: true },
     Perm { key: "gateway.restart",       category: "infrastructure", label: "Restart gateway",        mutating: true },
     Perm { key: "pvc.write",             category: "storage",        label: "Write/delete PVC files", mutating: true },
+    Perm { key: "nodes.cordon",          category: "infrastructure", label: "Cordon/uncordon nodes",  mutating: true },
     Perm { key: "users.manage",          category: "administration", label: "Manage users",           mutating: true },
     Perm { key: "rbac.manage",           category: "administration", label: "Manage RBAC",            mutating: true },
 ];
@@ -114,6 +115,8 @@ pub fn resolve(method: &Method, path: &str) -> Option<&'static str> {
         ["api", "builds", ..] => Some("builds.read"),
 
         // ── nodes ──────────────────────────────────────────────────────────
+        ["api", "nodes", _name, "cordon"] if *method == Method::POST
+            => Some("nodes.cordon"),
         ["api", "nodes", ..] => Some("nodes.read"),
 
         // ── audit ──────────────────────────────────────────────────────────

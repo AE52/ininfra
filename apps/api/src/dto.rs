@@ -88,6 +88,7 @@ pub enum AuditAction {
     DeleteImage,
     EditGateway,
     EditRbac,
+    CordonNode,
 }
 
 impl AuditAction {
@@ -112,6 +113,7 @@ impl AuditAction {
             AuditAction::DeleteImage => "delete_image",
             AuditAction::EditGateway => "edit_gateway",
             AuditAction::EditRbac => "edit_rbac",
+            AuditAction::CordonNode => "cordon_node",
         }
     }
 }
@@ -345,6 +347,9 @@ pub struct NodeInfo {
     pub spot: bool,
     /// Provisioning capacity type: "spot" | "on-demand" | "unknown".
     pub capacity_type: String,
+    /// True when the node is cordoned (`spec.unschedulable`): the scheduler will
+    /// not place new pods on it. Operators toggle this via the cordon endpoint.
+    pub unschedulable: bool,
 }
 
 /// Detail view for a single node: the node itself plus every pod currently
@@ -431,6 +436,14 @@ pub struct AuditEntry {
 #[serde(rename_all = "camelCase")]
 pub struct ScaleRequest {
     pub replicas: i32,
+}
+
+/// POST body for cordoning/uncordoning a node. `true` cordons (marks the node
+/// unschedulable), `false` uncordons it. One endpoint covers both directions.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CordonRequest {
+    pub unschedulable: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
