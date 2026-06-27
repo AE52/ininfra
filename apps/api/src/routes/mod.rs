@@ -25,6 +25,7 @@
 //!   POST   /api/builds                           body BuildTrigger
 //!   GET    /api/builds/:job/:number
 //!   GET    /api/nodes
+//!   GET    /api/rightsizing?ns=            (read-only resource right-sizing advisory)
 //!   GET    /api/cronjobs?ns=
 //!   GET    /api/jobs?ns=
 //!   PATCH  /api/cronjobs/:ns/:name/suspend        body SuspendRequest
@@ -57,6 +58,7 @@ mod manifest;
 mod nodes;
 mod env;
 mod pods;
+mod rightsizing;
 mod pvc;
 mod secrets;
 mod services;
@@ -85,6 +87,7 @@ pub fn router(state: AppState) -> Router {
         .merge(logs::routes())
         .merge(builds::routes())
         .merge(nodes::routes())
+        .merge(rightsizing::routes())
         .merge(audit::routes())
         .merge(build_config::routes())
         .merge(hpa::routes())

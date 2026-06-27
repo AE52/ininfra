@@ -56,6 +56,7 @@ import type {
   PvcFile,
   RbacMatrixRow,
   RbacPatch,
+  RightsizingRow,
   ScaleRequest,
   Service,
   SetupCompleteRequest,
@@ -397,6 +398,22 @@ export function createApiClient(options: ApiClientOptions = {}) {
       request<MutationAck>(cfg, "POST", `/api/nodes/${name}/cordon`, {
         unschedulable,
       } satisfies CordonRequest),
+
+    /* ---- right-sizing (read-only advisory) ---- */
+    /**
+     * List resource right-sizing recommendations for every Deployment and
+     * StatefulSet in scope (all managed namespaces when `ns` is omitted).
+     * Read-only — never applies anything.
+     */
+    listRightsizing: (
+      ns?: Namespace,
+      opts: { cursor?: string; limit?: number } = {},
+    ) =>
+      request<Page<RightsizingRow>>(
+        cfg,
+        "GET",
+        `/api/rightsizing${q({ ns, cursor: opts.cursor, limit: opts.limit })}`,
+      ),
 
     /* ---- audit ---- */
     listAudit: (

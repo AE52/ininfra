@@ -456,6 +456,65 @@ export interface NodeDetail {
 }
 
 /* ------------------------------------------------------------------ */
+/* Right-sizing (advisory; read-only)                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Advisory verdict for one workload's resourcing, derived conservatively from
+ * configured requests/limits vs. live per-replica usage. Never auto-applied.
+ *
+ * - `over_provisioned`  — usage well below requests (room to shrink).
+ * - `under_provisioned` — usage near/over limits (throttle / OOM risk).
+ * - `no_requests`       — no CPU/memory requests set at all.
+ * - `ok`                — requests look appropriate.
+ * - `unknown`           — metrics unavailable, so no verdict could be computed.
+ */
+export type RightsizingRecommendation =
+  | "over_provisioned"
+  | "under_provisioned"
+  | "no_requests"
+  | "ok"
+  | "unknown";
+
+/**
+ * One row of the right-sizing advisory, served by `GET /api/rightsizing?ns=`.
+ * A Deployment or StatefulSet with its configured requests/limits (summed per
+ * replica across the pod template's containers) next to live aggregate usage
+ * from metrics-server, plus an advisory flag.
+ *
+ * All CPU figures are millicores; all memory figures are MiB. Request/limit
+ * fields are `null` when that resource is unset on every container. Usage
+ * fields are `null` when metrics-server is absent (`metricsAvailable=false`),
+ * in which case the row degrades to a requests/limits-only view with no flag.
+ */
+export interface RightsizingRow {
+  namespace: Namespace;
+  name: string;
+  /** "Deployment" | "StatefulSet". */
+  kind: string;
+  replicas: number;
+  /** Per-replica CPU requests (millicores), summed across containers. */
+  requestsCpuM: number | null;
+  /** Per-replica CPU limits (millicores), summed across containers. */
+  limitsCpuM: number | null;
+  /** Per-replica memory requests (MiB), summed across containers. */
+  requestsMemMi: number | null;
+  /** Per-replica memory limits (MiB), summed across containers. */
+  limitsMemMi: number | null;
+  /** Total live CPU usage (millicores) across the workload's pods; null when unavailable. */
+  usageCpuM: number | null;
+  /** Total live memory usage (MiB) across the workload's pods; null when unavailable. */
+  usageMemMi: number | null;
+  /** Per-replica live CPU usage (millicores): total / running pods. */
+  usageCpuMPerReplica: number | null;
+  /** Per-replica live memory usage (MiB): total / running pods. */
+  usageMemMiPerReplica: number | null;
+  /** True when metrics-server is present and has at least one sample for this workload's pods. */
+  metricsAvailable: boolean;
+  recommendation: RightsizingRecommendation;
+}
+
+/* ------------------------------------------------------------------ */
 /* Audit                                                               */
 /* ------------------------------------------------------------------ */
 

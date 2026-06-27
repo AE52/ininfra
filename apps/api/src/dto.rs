@@ -418,6 +418,67 @@ pub struct ResourceAllocation {
 }
 
 /* ------------------------------------------------------------------ */
+/* Right-sizing (advisory; read-only)                                  */
+/* ------------------------------------------------------------------ */
+
+/// Advisory verdict for one workload, derived conservatively from configured
+/// requests/limits vs. live per-replica usage. Never auto-applied.
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum RightsizingRecommendation {
+    /// Live usage well below requests — requests can likely be lowered.
+    OverProvisioned,
+    /// Live usage near/over limits — throttle/OOM risk; consider raising.
+    UnderProvisioned,
+    /// No CPU/memory requests set at all — the scheduler is flying blind.
+    NoRequests,
+    /// Requests look appropriate for current usage.
+    Ok,
+    /// Metrics unavailable, so no recommendation could be computed.
+    Unknown,
+}
+
+/// One row of the right-sizing advisory: a Deployment or StatefulSet with its
+/// configured requests/limits (summed per replica across containers) next to
+/// live aggregate usage from metrics-server, plus an advisory flag.
+///
+/// All CPU figures are millicores; all memory figures are MiB. Request/limit
+/// fields are `None` when that resource is unset on every container. Usage
+/// fields are `None` when metrics-server is absent (`metrics_available=false`),
+/// in which case the row degrades to a requests/limits-only view with no flag.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RightsizingRow {
+    pub namespace: String,
+    pub name: String,
+    /// "Deployment" | "StatefulSet".
+    pub kind: String,
+    pub replicas: i32,
+    /// Per-replica CPU requests (millicores), summed across containers.
+    pub requests_cpu_m: Option<i64>,
+    /// Per-replica CPU limits (millicores), summed across containers.
+    pub limits_cpu_m: Option<i64>,
+    /// Per-replica memory requests (MiB), summed across containers.
+    pub requests_mem_mi: Option<i64>,
+    /// Per-replica memory limits (MiB), summed across containers.
+    pub limits_mem_mi: Option<i64>,
+    /// Total live CPU usage (millicores) across the workload's pods; `None`
+    /// when metrics are unavailable.
+    pub usage_cpu_m: Option<i64>,
+    /// Total live memory usage (MiB) across the workload's pods; `None` when
+    /// metrics are unavailable.
+    pub usage_mem_mi: Option<i64>,
+    /// Per-replica live CPU usage (millicores): total usage / running pods.
+    pub usage_cpu_m_per_replica: Option<i64>,
+    /// Per-replica live memory usage (MiB): total usage / running pods.
+    pub usage_mem_mi_per_replica: Option<i64>,
+    /// True when at least one matching PodMetrics object was found for this
+    /// workload (i.e. metrics-server is present and has scraped the pods).
+    pub metrics_available: bool,
+    pub recommendation: RightsizingRecommendation,
+}
+
+/* ------------------------------------------------------------------ */
 /* Audit                                                               */
 /* ------------------------------------------------------------------ */
 
