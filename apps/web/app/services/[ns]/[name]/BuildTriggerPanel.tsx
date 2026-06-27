@@ -114,7 +114,7 @@ export function BuildTriggerPanel({
             <Input
               value={customRepo}
               onChange={(e) => setCustomRepo(e.target.value)}
-              placeholder="mytech-technology/journal-settings"
+              placeholder="your-org/your-service"
               className="w-full font-mono"
             />
           </label>

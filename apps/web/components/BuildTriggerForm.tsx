@@ -59,7 +59,7 @@ export function BuildTriggerForm({ repos }: { repos: string[] }) {
         <Input
           value={repo}
           onChange={(e) => setRepo(e.target.value)}
-          placeholder="mytech-technology/news-rss-deleter"
+          placeholder="your-org/your-service"
           list="known-repos"
           className="w-full font-mono"
         />

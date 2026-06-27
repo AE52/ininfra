@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card";
  * tag, and renders it in a compact, overflow-safe way.
  *
  * Examples handled:
- *   news-all-content@sha256:5cc2f1de52d5246b85252...  → name + @sha256:5cc2f1de…
+ *   my-service@sha256:5cc2f1de52d5246b85252...  → name + @sha256:5cc2f1de…
  *   123456789.dkr.ecr.eu-west-1.amazonaws.com/foo:bar → foo:bar
  */
 function ImageRef({ image }: { image: string }) {
