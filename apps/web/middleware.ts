@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isPublicRoute } from "@/lib/routes";
 
 /**
  * Edge gate: every page route requires a `session` cookie, else redirect to
@@ -25,10 +26,8 @@ export function middleware(req: NextRequest) {
   //    is done client-side from the login page; here we only avoid bouncing
   //    these paths to /login.
   if (
-    pathname === "/login" ||
+    isPublicRoute(pathname) ||
     pathname === "/healthz" ||
-    pathname === "/setup" ||
-    pathname.startsWith("/setup/") ||
     pathname.startsWith("/api/setup")
   ) {
     return NextResponse.next();

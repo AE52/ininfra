@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Hammer } from "lucide-react";
 import type { BuildJob } from "@ininfra/shared-types";
 import { api } from "@/lib/api";
+import { isPublicRoute } from "@/lib/routes";
 
 /**
  * Floating bottom-right indicator showing how many CI/CD builds are currently
@@ -14,10 +15,10 @@ import { api } from "@/lib/api";
  */
 export function ActiveBuildIndicator() {
   const pathname = usePathname();
-  // The login and setup pages are public (no session). Polling the auth-gated
-  // builds API there 401s, and the API client turns a 401 into
-  // window.location="/login" — which would loop. Don't run on those routes.
-  const disabled = pathname === "/login" || pathname === "/setup";
+  // Public pages have no session. Polling the auth-gated builds API there 401s,
+  // and the API client turns a 401 into window.location="/login" — which would
+  // loop. Don't run on those routes.
+  const disabled = isPublicRoute(pathname ?? "");
   const [active, setActive] = useState<BuildJob[]>([]);
 
   useEffect(() => {

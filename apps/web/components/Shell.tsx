@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { CommandPalette } from "@/components/CommandPalette";
 import { FavoritesProvider } from "@/components/FavoritesProvider";
 import { api } from "@/lib/api";
+import { isPublicRoute } from "@/lib/routes";
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
@@ -28,10 +29,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       try {
         const msg = message.trim();
         if (!msg) return;
-        if (
-          typeof location !== "undefined" &&
-          (location.pathname === "/login" || location.pathname === "/setup")
-        ) {
+        if (typeof location !== "undefined" && isPublicRoute(location.pathname)) {
           return;
         }
         const now = Date.now();
@@ -90,8 +88,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // The login and setup pages render bare, without the console chrome.
-  if (pathname === "/login" || pathname === "/setup") return <>{children}</>;
+  // Public pages (login, setup) render bare, without the console chrome.
+  if (isPublicRoute(pathname)) return <>{children}</>;
 
   return (
     <FavoritesProvider>
