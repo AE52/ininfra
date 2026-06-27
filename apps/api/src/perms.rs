@@ -48,6 +48,7 @@ pub static PERMS: &[Perm] = &[
     Perm { key: "gateway.read",       category: "infrastructure",  label: "View gateway",           mutating: false },
     Perm { key: "hpa.read",           category: "workloads",       label: "View HPA",               mutating: false },
     Perm { key: "statefulsets.read",  category: "workloads",       label: "View statefulsets",      mutating: false },
+    Perm { key: "topology.read",      category: "workloads",       label: "View pod topology & PDB", mutating: false },
     Perm { key: "cronjobs.read",      category: "workloads",       label: "View cronjobs",          mutating: false },
     Perm { key: "jobs.read",          category: "workloads",       label: "View jobs",              mutating: false },
     Perm { key: "pvc.read",           category: "storage",         label: "View PVCs",              mutating: false },
@@ -208,6 +209,9 @@ pub fn resolve(method: &Method, path: &str) -> Option<&'static str> {
 
         // ── describe (read-only events + status summary) ────────────────────
         ["api", "describe", ..] => Some("services.read"),
+
+        // ── topology (read-only pod topology + PDB safety view) ──────────────
+        ["api", "topology", ..] => Some("topology.read"),
 
         // ── RBAC ───────────────────────────────────────────────────────────
         ["api", "rbac", ..] => Some("rbac.manage"),

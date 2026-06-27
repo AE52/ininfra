@@ -21,6 +21,7 @@ import { PodsTable } from "@/components/PodsTable";
 import { LogViewer } from "@/components/LogViewer";
 import { ManifestViewer } from "@/components/ManifestViewer";
 import { DescribePanel } from "@/components/DescribePanel";
+import { TopologyPanel } from "@/components/TopologyPanel";
 import { KubectlMenu } from "@/components/KubectlMenu";
 import { ErrorPanel } from "@/components/ErrorPanel";
 import { BranchControl } from "./BranchControl";
@@ -382,6 +383,12 @@ export default async function ServiceDetailPage({
               : undefined
           } />
         )}
+      </section>
+
+      {/* Topology & disruption budget */}
+      <section>
+        <h2 className="label-kicker mb-3">Topology &amp; disruption budget</h2>
+        <TopologyPanel kind="deployment" ns={ns} name={name} />
       </section>
 
       {/* Events & Describe */}
