@@ -131,21 +131,80 @@ async fn snapshot(
 
     // `limit` wins over legacy `tail` for backward compat.
     let limit = q.limit.or(q.tail);
+    let want = limit.unwrap_or(500);
 
-    let loki_url = &config::get().loki_url;
-    let logs = query_range(
-        loki_url,
-        &ns,
-        &pod,
-        Some(&container),
-        q.q.as_deref(),
-        mode,
-        Some(range),
-        limit,
-    )
-    .await?;
+    // Loki is an OPTIONAL search/history backend. When it is configured and
+    // reachable, use it. Otherwise (no LOKI_URL, or Loki down) fall back to the
+    // pod log snapshot straight from the Kubernetes API — always available.
+    let loki_url = config::get().loki_url.clone();
+    if !loki_url.trim().is_empty() {
+        if let Ok(logs) = query_range(
+            &loki_url,
+            &ns,
+            &pod,
+            Some(&container),
+            q.q.as_deref(),
+            mode,
+            Some(range),
+            limit,
+        )
+        .await
+        {
+            return Ok(Json(logs));
+        }
+    }
 
+    let logs = kube_log_snapshot(&api, &ns, &pod, &container, want, q.q.as_deref(), use_regex).await?;
     Ok(Json(logs))
+}
+
+/// Fallback log snapshot read straight from the Kubernetes API (kubectl-logs
+/// style), used when Loki is not configured or unreachable. Loki adds full-text
+/// search and longer retention; the kube API is the always-available baseline.
+/// Applies the same substring/regex search filter client-side.
+async fn kube_log_snapshot(
+    api: &Api<K8sPod>,
+    ns: &str,
+    pod: &str,
+    container: &str,
+    limit: u32,
+    query: Option<&str>,
+    use_regex: bool,
+) -> ApiResult<Vec<PodLog>> {
+    let lp = LogParams {
+        container: Some(container.to_string()),
+        timestamps: true,
+        tail_lines: Some(limit.clamp(1, 5000) as i64),
+        ..Default::default()
+    };
+    let raw = api.logs(pod, &lp).await?;
+
+    let needle = query.filter(|s| !s.is_empty());
+    let re = if use_regex {
+        needle.and_then(|p| regex::Regex::new(p).ok())
+    } else {
+        None
+    };
+    let lower = (!use_regex).then(|| needle.map(|s| s.to_lowercase())).flatten();
+
+    let mut out = Vec::new();
+    for line in raw.lines() {
+        if line.is_empty() {
+            continue;
+        }
+        let log = parse_line(ns, pod, container, line);
+        if let Some(re) = &re {
+            if !re.is_match(&log.message) {
+                continue;
+            }
+        } else if let Some(n) = &lower {
+            if !log.message.to_lowercase().contains(n) {
+                continue;
+            }
+        }
+        out.push(log);
+    }
+    Ok(out)
 }
 
 #[derive(Debug, Deserialize)]
@@ -268,7 +327,7 @@ fn parse_pods_csv(raw: Option<&str>) -> ApiResult<Vec<String>> {
 
 /// Historical multi-pod snapshot via Loki.
 async fn snapshot_multi(
-    State(_st): State<AppState>,
+    State(st): State<AppState>,
     Path(ns): Path<String>,
     Query(q): Query<MultiLogQuery>,
 ) -> ApiResult<Json<Vec<PodLog>>> {
@@ -301,19 +360,34 @@ async fn snapshot_multi(
             .unwrap_or_else(TimeRange::last_hour),
     };
 
-    let loki_url = &config::get().loki_url;
-    let logs = query_range_multi(
-        loki_url,
-        &ns,
-        &pods,
-        q.q.as_deref(),
-        mode,
-        Some(range),
-        q.limit,
-    )
-    .await?;
+    let want = q.limit.unwrap_or(500);
 
-    Ok(Json(logs))
+    // Loki when available; otherwise aggregate kube pod-log snapshots.
+    let loki_url = config::get().loki_url.clone();
+    if !loki_url.trim().is_empty() {
+        if let Ok(logs) =
+            query_range_multi(&loki_url, &ns, &pods, q.q.as_deref(), mode, Some(range), q.limit).await
+        {
+            return Ok(Json(logs));
+        }
+    }
+
+    let api: Api<K8sPod> = Api::namespaced(st.kube.clone(), &ns);
+    let mut all: Vec<PodLog> = Vec::new();
+    for pod in &pods {
+        // Skip pods whose container can't be resolved rather than failing all.
+        let Ok(container) = resolve_container(&api, pod, None).await else {
+            continue;
+        };
+        if let Ok(mut logs) =
+            kube_log_snapshot(&api, &ns, pod, &container, want, q.q.as_deref(), use_regex).await
+        {
+            all.append(&mut logs);
+        }
+    }
+    all.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+    all.truncate(want as usize);
+    Ok(Json(all))
 }
 
 #[derive(Debug, Deserialize)]
