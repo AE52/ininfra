@@ -24,12 +24,16 @@ const MAIN: Shot[] = [
   { img: "08-env", url: "console.your-cluster/.../env", kicker: "ENVIRONMENT", title: "Edit env without YAML", desc: "View and patch container env from ConfigMaps and Secrets. Secret values stay masked until you reveal them, with optimistic concurrency on save." },
   { img: "10-nodes", url: "console.your-cluster/nodes", kicker: "NODES", title: "Cluster-wide node inventory", desc: "Every node with live CPU and memory from metrics-server, capacity type, and the pods scheduled on each." },
   { img: "11-autoscaling", url: "console.your-cluster/hpa", kicker: "AUTOSCALING", title: "Tune HPAs inline", desc: "View and edit HorizontalPodAutoscalers — min/max replicas and target utilization — without leaving the console." },
+  { img: "22-jobs", url: "console.your-cluster/jobs", kicker: "JOBS & CRONJOBS", title: "Schedule, suspend, run now", desc: "List CronJobs and recent Jobs, suspend or resume a schedule, and trigger a run on demand — every action audited." },
+  { img: "23-capacity", url: "console.your-cluster/capacity", kicker: "CAPACITY & QUOTAS", title: "Know your headroom", desc: "Per-node allocatable vs requested vs live-used CPU/memory rolled up cluster-wide, plus per-namespace ResourceQuota and LimitRange usage." },
+  { img: "24-rightsizing", url: "console.your-cluster/rightsizing", kicker: "RIGHT-SIZING", title: "Stop over-provisioning", desc: "Configured requests and limits next to live usage, flagging over-provisioned and throttle-risk workloads — advisory, never applied automatically." },
   { img: "12-status", url: "console.your-cluster/status", kicker: "STATUS PAGE", title: "Atlassian-style health", desc: "A status page backed by a background monitor that records every component health transition over time." },
   { img: "14-audit", url: "console.your-cluster/audit", kicker: "AUDIT LOG", title: "Every change, attributed", desc: "A cursor-paginated, time-ordered record of every mutating action, tied to the user who made it — written to your own Postgres." },
   { img: "15-users", url: "console.your-cluster/users", kicker: "USERS & ROLES", title: "Role-based access", desc: "Create console users with developer, admin, or super-admin roles. Viewers read; only admins change; user management is admin-only." },
 ];
 
 const MORE: Shot[] = [
+  { img: "25-secrets-health", url: "console.your-cluster/secrets", kicker: "SECRETS HEALTH", title: "TLS cert expiry" },
   { img: "09-stateful", url: "console.your-cluster/stateful", kicker: "STATEFULSETS", title: "Stateful workloads" },
   { img: "16-builds", url: "console.your-cluster/builds", kicker: "CI / CD", title: "Builds & deploys" },
   { img: "17-branches", url: "console.your-cluster/branches", kicker: "BRANCHES", title: "Per-service deploy branch" },

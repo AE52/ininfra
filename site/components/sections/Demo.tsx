@@ -48,8 +48,8 @@ export function Demo() {
             />
           </div>
           <p className="mt-4 text-center font-mono text-xs text-muted">
-            Setup wizard → workloads → service detail → env → nodes → autoscaling
-            → status → audit
+            Setup wizard → workloads → topology &amp; drift → jobs → capacity →
+            right-sizing → secrets health → statefulsets → nodes → audit
           </p>
         </Reveal>
       </div>
