@@ -8,13 +8,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- _Nothing yet._
+- Node cordon / uncordon (admin, audited) with a Schedulable/Cordoned badge.
+- Jobs & CronJobs view — list, suspend/resume, and trigger a run on demand.
+- View the live manifest (YAML) of any workload/pod, with managed fields and the
+  last-applied annotation stripped.
+- Per-object Events & Describe panel (conditions, container status, recent events).
+- Workload drift detection — live spec vs. last-applied configuration.
+- Topology & PodDisruptionBudget safety view (node/zone distribution, SPOF flags).
+- Cluster capacity & namespace quota dashboard (allocatable/requested/used,
+  ResourceQuota and LimitRange usage).
+- Resource right-sizing recommendations (requests/limits vs. live usage).
+- Secret & TLS-certificate expiry scanner (metadata only).
+- Copy-kubectl-command helper for workloads and pods.
+- First-run setup wizard for self-hosting (branding, cluster, namespaces,
+  integrations, first admin).
+- StatefulSet detail page with parity to deployments.
+- Configurable spot/on-demand node detection (`SPOT_LABEL_KEY`/`VALUE`/`TAINT`).
 
 ### Changed
-- _Nothing yet._
+- Default UI language is now English (Turkish still available).
+- Optional integrations degrade gracefully when absent — builds (Argo),
+  pod logs (Loki), and the build catalog no longer return 5xx when not configured.
+- Roles expanded to `developer` / `admin` / `super_admin` with per-endpoint RBAC.
 
 ### Fixed
-- _Nothing yet._
+- First-run setup wizard reachable (resolved a `/setup` ↔ `/login` redirect loop).
+- Global search now honors the managed-namespace allowlist (was leaking other namespaces).
+- Secret reveal restricted to admins and audited; audit feed restricted to admins.
+- Replica scale bounded; invalid regex searches return 400 (not 500); Loki label
+  values escaped; setup-complete fails closed on a DB error.
+- Internal/company-specific placeholders removed from the UI.
 
 ## [0.1.0] - 2026-06-27
 
