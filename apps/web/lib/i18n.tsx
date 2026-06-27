@@ -32,6 +32,7 @@ const tr = {
     workloads: "İş Yükleri",
     services: "Servisler",
     stateful: "Stateful",
+    jobs: "İşler",
     autoscaling: "Otomatik Ölçekleme",
     gateway: "Ağ Geçidi",
     builds: "Build'ler",
@@ -151,6 +152,49 @@ const tr = {
     toastRestartSuccess: (name: string) =>
       `${name} rolling restart başlatıldı`,
     ready: "hazır",
+  },
+
+  // ── Jobs & CronJobs page ────────────────────────────────────────────────────
+  jobs: {
+    kicker: "Batch tier",
+    title: "Jobs & CronJobs",
+    subtitle:
+      "Zamanlanmış CronJob'lar ve son Job çalışmaları. Suspend/resume ve şimdi çalıştır audit'lenir.",
+    loading: "Yükleniyor…",
+    allNamespaces: "Tüm namespace'ler",
+    // CronJobs section
+    cronjobsTitle: "CronJob'lar",
+    noCronjobs: "Bu namespace'te CronJob yok",
+    schedule: "Zamanlama",
+    suspended: "Askıda",
+    active: "aktif",
+    lastRun: "Son çalışma",
+    never: "hiç",
+    suspendBtn: "Askıya al",
+    resumeBtn: "Devam ettir",
+    runNowBtn: "Şimdi çalıştır",
+    busy: "…",
+    confirmSuspend: (name: string) =>
+      `${name} CronJob'u askıya alınsın mı? Yeni Job'lar zamanlanmayacak.`,
+    confirmResume: (name: string) => `${name} CronJob'u devam ettirilsin mi?`,
+    confirmTrigger: (name: string) =>
+      `${name} şablonundan şimdi bir Job oluşturulsun mu?`,
+    toastSuspendSuccess: (name: string) => `${name} askıya alındı`,
+    toastResumeSuccess: (name: string) => `${name} devam ettirildi`,
+    toastTriggerSuccess: (jobName: string) => `Job oluşturuldu: ${jobName}`,
+    // Jobs section
+    recentJobsTitle: "Son Job'lar",
+    noJobs: "Bu namespace'te Job yok",
+    colJob: "Job",
+    colStatus: "Durum",
+    colCompletions: "Tamamlanma",
+    colDuration: "Süre",
+    colOwner: "CronJob",
+    colStarted: "Başladı",
+    statusComplete: "Tamamlandı",
+    statusFailed: "Başarısız",
+    statusRunning: "Çalışıyor",
+    statusUnknown: "Bilinmiyor",
   },
 
   // ── Storage page ──────────────────────────────────────────────────────────
@@ -439,6 +483,7 @@ const en: Translations = {
     workloads: "Workloads",
     services: "Services",
     stateful: "Stateful",
+    jobs: "Jobs",
     autoscaling: "Autoscaling",
     gateway: "Gateway",
     builds: "Builds",
@@ -553,6 +598,48 @@ const en: Translations = {
     toastRestartSuccess: (name: string) =>
       `${name} rolling restart initiated`,
     ready: "ready",
+  },
+
+  jobs: {
+    kicker: "Batch tier",
+    title: "Jobs & CronJobs",
+    subtitle:
+      "Scheduled CronJobs and recent Job runs. Suspend/resume and run-now are audited.",
+    loading: "Loading…",
+    allNamespaces: "All namespaces",
+    // CronJobs section
+    cronjobsTitle: "CronJobs",
+    noCronjobs: "No CronJobs in this namespace",
+    schedule: "Schedule",
+    suspended: "Suspended",
+    active: "active",
+    lastRun: "Last run",
+    never: "never",
+    suspendBtn: "Suspend",
+    resumeBtn: "Resume",
+    runNowBtn: "Run now",
+    busy: "…",
+    confirmSuspend: (name: string) =>
+      `Suspend CronJob ${name}? No new Jobs will be scheduled.`,
+    confirmResume: (name: string) => `Resume CronJob ${name}?`,
+    confirmTrigger: (name: string) =>
+      `Create a Job now from the ${name} template?`,
+    toastSuspendSuccess: (name: string) => `${name} suspended`,
+    toastResumeSuccess: (name: string) => `${name} resumed`,
+    toastTriggerSuccess: (jobName: string) => `Created job ${jobName}`,
+    // Jobs section
+    recentJobsTitle: "Recent Jobs",
+    noJobs: "No Jobs in this namespace",
+    colJob: "Job",
+    colStatus: "Status",
+    colCompletions: "Completions",
+    colDuration: "Duration",
+    colOwner: "CronJob",
+    colStarted: "Started",
+    statusComplete: "Complete",
+    statusFailed: "Failed",
+    statusRunning: "Running",
+    statusUnknown: "Unknown",
   },
 
   storage: {

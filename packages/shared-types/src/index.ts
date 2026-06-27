@@ -95,7 +95,9 @@ export type AuditAction =
   | "edit_gateway"
   | "edit_rbac"
   | "cordon_node"
-  | "reveal_secret";
+  | "reveal_secret"
+  | "suspend_cronjob"
+  | "trigger_job";
 
 /** Console access role. */
 export type Role = "developer" | "admin" | "super_admin";
@@ -892,6 +894,63 @@ export interface StatefulSetSummary {
   serviceName: string | null;
   updateStrategy: string | null;
   createdAt: Timestamp;
+}
+
+/* ------------------------------------------------------------------ */
+/* Jobs & CronJobs (batch/v1)                                         */
+/* ------------------------------------------------------------------ */
+
+/** Rollup status verb for a Job. */
+export type JobStatus = "Complete" | "Failed" | "Running" | "Unknown";
+
+/** Summary of a `batch/v1` CronJob. */
+export interface CronJobSummary {
+  namespace: string;
+  name: string;
+  /** Cron schedule expression, e.g. "*\/5 * * * *". */
+  schedule: string;
+  /** True when `spec.suspend` is set (the controller won't start new jobs). */
+  suspended: boolean;
+  lastScheduleTime: Timestamp | null;
+  lastSuccessfulTime: Timestamp | null;
+  /** Number of currently active (running) Jobs owned by this CronJob. */
+  activeCount: number;
+  /** Primary container image of the job template, when present. */
+  image: string | null;
+}
+
+/** Summary of a `batch/v1` Job. */
+export interface JobSummary {
+  namespace: string;
+  name: string;
+  /** Owning CronJob name, when this Job was created by a CronJob. */
+  owner: string | null;
+  /** Desired completions (`spec.completions`); null when unset (run-once). */
+  completions: number | null;
+  succeeded: number;
+  failed: number;
+  active: number;
+  startTime: Timestamp | null;
+  completionTime: Timestamp | null;
+  /** Wall-clock seconds from start to completion (completed jobs only). */
+  durationSeconds: number | null;
+  status: JobStatus;
+}
+
+/**
+ * PATCH body for suspending/resuming a CronJob. `true` suspends (the controller
+ * stops scheduling new Jobs), `false` resumes. One endpoint covers both.
+ */
+export interface SuspendRequest {
+  suspend: boolean;
+}
+
+/** Response of `POST /api/cronjobs/:ns/:name/trigger` — the created Job's name. */
+export interface TriggerJobAck {
+  ok: boolean;
+  /** Name (`metadata.name`) of the newly created Job. */
+  jobName: string;
+  auditId: string | null;
 }
 
 /* ------------------------------------------------------------------ */

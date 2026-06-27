@@ -45,6 +45,8 @@ pub static PERMS: &[Perm] = &[
     Perm { key: "gateway.read",       category: "infrastructure",  label: "View gateway",           mutating: false },
     Perm { key: "hpa.read",           category: "workloads",       label: "View HPA",               mutating: false },
     Perm { key: "statefulsets.read",  category: "workloads",       label: "View statefulsets",      mutating: false },
+    Perm { key: "cronjobs.read",      category: "workloads",       label: "View cronjobs",          mutating: false },
+    Perm { key: "jobs.read",          category: "workloads",       label: "View jobs",              mutating: false },
     Perm { key: "pvc.read",           category: "storage",         label: "View PVCs",              mutating: false },
     Perm { key: "secrets.read",       category: "storage",         label: "View secrets health",    mutating: false },
     Perm { key: "branches.read",      category: "ci_cd",           label: "View branches",          mutating: false },
@@ -61,6 +63,8 @@ pub static PERMS: &[Perm] = &[
     Perm { key: "hpa.edit",              category: "workloads",      label: "Edit HPA",               mutating: true },
     Perm { key: "statefulsets.scale",    category: "workloads",      label: "Scale statefulsets",     mutating: true },
     Perm { key: "statefulsets.restart",  category: "workloads",      label: "Restart statefulsets",   mutating: true },
+    Perm { key: "cronjobs.suspend",      category: "workloads",      label: "Suspend/resume cronjobs", mutating: true },
+    Perm { key: "cronjobs.trigger",      category: "workloads",      label: "Trigger cronjobs now",   mutating: true },
     Perm { key: "gateway.edit",          category: "infrastructure", label: "Edit gateway config",    mutating: true },
     Perm { key: "gateway.restart",       category: "infrastructure", label: "Restart gateway",        mutating: true },
     Perm { key: "pvc.write",             category: "storage",        label: "Write/delete PVC files", mutating: true },
@@ -138,6 +142,16 @@ pub fn resolve(method: &Method, path: &str) -> Option<&'static str> {
         ["api", "statefulsets", _ns, _name, "restart"] if *method == Method::POST
             => Some("statefulsets.restart"),
         ["api", "statefulsets", ..] => Some("statefulsets.read"),
+
+        // ── cronjobs ───────────────────────────────────────────────────────
+        ["api", "cronjobs", _ns, _name, "suspend"] if *method == Method::PATCH
+            => Some("cronjobs.suspend"),
+        ["api", "cronjobs", _ns, _name, "trigger"] if *method == Method::POST
+            => Some("cronjobs.trigger"),
+        ["api", "cronjobs", ..] => Some("cronjobs.read"),
+
+        // ── jobs ───────────────────────────────────────────────────────────
+        ["api", "jobs", ..] => Some("jobs.read"),
 
         // ── events ─────────────────────────────────────────────────────────
         ["api", "events", ..] => Some("events.read"),
@@ -230,6 +244,8 @@ pub fn default_allowed(role: &str, key: &str, mutating: bool) -> bool {
                         | "deployments.restart"
                         | "builds.trigger"
                         | "branches.edit"
+                        | "cronjobs.suspend"
+                        | "cronjobs.trigger"
                 )
             }
         }
