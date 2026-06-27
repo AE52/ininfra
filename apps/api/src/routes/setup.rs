@@ -226,8 +226,20 @@ async fn complete(
     Ok(Json(serde_json::json!({ "ok": true })))
 }
 
-/// Whether setup is already complete (best-effort; false on DB error so the
-/// wizard stays reachable rather than wedging shut).
+/// Whether setup should be treated as already complete (i.e. the wizard's
+/// `namespaces`/`complete` endpoints must be closed).
+///
+/// Fails CLOSED: on a DB read error we cannot prove setup is still pending, so
+/// we treat it as complete/unavailable. This prevents a transient DB outage from
+/// briefly re-opening the public `POST /api/setup/complete`, which would let an
+/// unauthenticated caller seed a new admin. The normal path (DB readable) is
+/// unchanged: complete only when the stored row says so.
 async fn setup_is_complete(st: &AppState) -> bool {
-    matches!(db::get_app_settings(&st.db).await, Ok(Some((true, _))))
+    match db::get_app_settings(&st.db).await {
+        Ok(Some((complete, _))) => complete,
+        // Row genuinely missing → setup truly pending (first run).
+        Ok(None) => false,
+        // DB unreadable → fail closed (treat as complete/unavailable).
+        Err(_) => true,
+    }
 }

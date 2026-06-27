@@ -202,6 +202,11 @@ pub fn resolve(method: &Method, path: &str) -> Option<&'static str> {
 /// Return the code-default allowed value for a (role, permission key, mutating) triple.
 /// This is the fail-safe baseline; DB overrides layer on top.
 pub fn default_allowed(role: &str, key: &str, mutating: bool) -> bool {
+    // Admin-class-only reads: gated by the `AdminIdentity` extractor at the
+    // handler (audit + error feeds), so the matrix must mirror that — these are
+    // never allowed for developer/unknown roles even though they are non-mutating.
+    const ADMIN_ONLY_READS: &[&str] = &["audit.read"];
+
     match role {
         "super_admin" => true,
         "admin" => {
@@ -213,7 +218,9 @@ pub fn default_allowed(role: &str, key: &str, mutating: bool) -> bool {
             }
         }
         "developer" => {
-            if !mutating {
+            if ADMIN_ONLY_READS.contains(&key) {
+                false
+            } else if !mutating {
                 true
             } else {
                 // developer may only do these specific mutations by default
@@ -226,8 +233,8 @@ pub fn default_allowed(role: &str, key: &str, mutating: bool) -> bool {
                 )
             }
         }
-        // Unknown role: reads only, no mutations.
-        _ => !mutating,
+        // Unknown role: reads only, no mutations, minus the admin-only reads.
+        _ => !mutating && !ADMIN_ONLY_READS.contains(&key),
     }
 }
 

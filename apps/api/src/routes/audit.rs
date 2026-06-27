@@ -9,6 +9,7 @@ use chrono::{DateTime, Duration, Utc};
 use regex::Regex;
 use serde::Deserialize;
 
+use crate::auth::AdminIdentity;
 use crate::db::{list_audit, AuditFilter};
 use crate::dto::{AuditEntry, Page};
 use crate::error::{ApiError, ApiResult};
@@ -45,6 +46,7 @@ struct AuditQuery {
 }
 
 async fn get_audit(
+    _admin: AdminIdentity,
     State(st): State<AppState>,
     Query(q): Query<AuditQuery>,
 ) -> ApiResult<Json<Page<AuditEntry>>> {

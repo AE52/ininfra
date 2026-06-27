@@ -94,7 +94,8 @@ export type AuditAction =
   | "delete_image"
   | "edit_gateway"
   | "edit_rbac"
-  | "cordon_node";
+  | "cordon_node"
+  | "reveal_secret";
 
 /** Console access role. */
 export type Role = "developer" | "admin" | "super_admin";
